@@ -1,3 +1,6 @@
+/**
+ * Problem abstraction
+ */
 export abstract class Problem {
 
   protected goal: any;

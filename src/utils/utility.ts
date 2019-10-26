@@ -12,7 +12,7 @@ export class Utility {
       };
     }
     const node = nodes[index];
-    const next = this.ExplodePathInPlainText(++index, node.D, nodes);
+    const next = this.ExplodePathInPlainText(++index, node.Cost, nodes);
     return {
       path: `${node.State}`.concat(next.path === '' ? '' : `.${next.path}`),
       cost: cost + next.cost

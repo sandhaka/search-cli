@@ -43,27 +43,20 @@ export class Node {
   }
 
   /**
-   * Build a child node
-   */
-  child_node(problem: Problem, action: any): Node {
-    const next_state = problem.result(this.state, action);
-    return new Node(
-      next_state.State,       // Child state
-      action,                 // Action
-      this,                   // Parent reference
-      problem.pathCost(
-        this.path_cost,
-        this.state,
-        action,
-        next_state.State)     // Path "Cost"
-    );
-  }
-
-  /**
    * Return solution as sequence of actions to solve the problem
    */
   solution(): any[] {
     return this.path().map(n => n.action);
+  }
+
+  private child_node(problem: Problem, action: any): Node {
+    const next_state = problem.result(this.state, action);
+    return new Node(
+      next_state.State,       // Child state
+      action,                 // Action
+      this,                   // Parent
+      problem.pathCost(this.path_cost, this.state, action, next_state.State)
+    );
   }
 
   private path(): Node[] {

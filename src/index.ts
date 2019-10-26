@@ -41,172 +41,172 @@ const bfsDemo = () => {
   const directedGraphMap = [
     {
       State: "Milano",
-      D: 0,
+      Cost: 0,
       Neighbors: [
         {
           State: "Monza",
-          D: 26,
+          Cost: 26,
           Neighbors: []
         },
         {
           State: "Treviglio",
-          D: 64,
+          Cost: 64,
           Neighbors: []
         },
         {
           State: "Crema",
-          D: 46,
+          Cost: 46,
           Neighbors: []
         },
         {
           State: "Piacenza",
-          D: 67,
+          Cost: 67,
           Neighbors: []
         },
         {
           State: "Rozzano",
-          D: 13,
+          Cost: 13,
           Neighbors: []
         }
       ]
     },
     {
       State: "Monza",
-      D: 0,
+      Cost: 0,
       Neighbors: [
         {
           State: "Bergamo",
-          D: 45,
+          Cost: 45,
           Neighbors: []
         },
       ]
     },
     {
       State: "Rozzano",
-      D: 0,
+      Cost: 0,
       Neighbors: [
         {
           State: "Pavia",
-          D: 33,
+          Cost: 33,
           Neighbors: []
         },
       ]
     },
     {
       State: "Treviglio",
-      D: 0,
+      Cost: 0,
       Neighbors: [
         {
           State: "Brescia",
-          D: 57,
+          Cost: 57,
           Neighbors: []
         },
       ]
     },
     {
       State: "Crema",
-      D: 0,
+      Cost: 0,
       Neighbors: [
         {
           State: "Cremona",
-          D: 42,
+          Cost: 42,
           Neighbors: []
         },
       ]
     },
     {
       State: "Piacenza",
-      D: 0,
+      Cost: 0,
       Neighbors: [
         {
           State: "Cremona",
-          D: 43,
+          Cost: 43,
           Neighbors: []
         },
       ]
     },
     {
       State: "Brescia",
-      D: 0,
+      Cost: 0,
       Neighbors: [
         {
           State: "Verona",
-          D: 74,
+          Cost: 74,
           Neighbors: []
         },
         {
           State: "Mantua",
-          D: 101,
+          Cost: 101,
           Neighbors: []
         }
       ]
     },
     {
       State: "Cremona",
-      D: 0,
+      Cost: 0,
       Neighbors: [
         {
           State: "Mantua",
-          D: 72,
+          Cost: 72,
           Neighbors: []
         }
       ]
     },
     {
       State: "Verona",
-      D: 0,
+      Cost: 0,
       Neighbors: [
         {
           State: "Vicenza",
-          D: 58,
+          Cost: 58,
           Neighbors: []
         },
         {
           State: "Padova",
-          D: 88,
+          Cost: 88,
           Neighbors: []
         },
         {
           State: "Mantua",
-          D: 48,
+          Cost: 48,
           Neighbors: []
         }
       ]
     },
     {
       State: "Vicenza",
-      D: 0,
+      Cost: 0,
       Neighbors: [
         {
           State: "Treviso",
-          D: 58,
+          Cost: 58,
           Neighbors: []
         },
         {
           State: "Venezia",
-          D: 70,
+          Cost: 70,
           Neighbors: []
         }
       ]
     },
     {
       State: "Padova",
-      D: 0,
+      Cost: 0,
       Neighbors: [
         {
           State: "Venezia",
-          D: 39,
+          Cost: 39,
           Neighbors: []
         }
       ]
     },
     {
       State: "Treviso",
-      D: 0,
+      Cost: 0,
       Neighbors: [
         {
           State: "Venezia",
-          D: 41,
+          Cost: 41,
           Neighbors: []
         }
       ]
