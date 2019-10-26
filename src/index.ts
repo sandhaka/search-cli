@@ -37,6 +37,7 @@ console.log(`Play "${program.demo}" demo`);
 //#region Find best Path with "Breadth First Search"
 
 const bfsDemo = () => {
+  let iteration: number = 0;
   const directedGraphMap = [
     {
       State: "Milano",
@@ -215,14 +216,17 @@ const bfsDemo = () => {
   const solutionTree = Graph.makeUndirected(directedGraphMap);
   const problem = new FindingPathProblem('Milano', 'Venezia', solutionTree.nodes);
 
-  let frontier = new Queue<Node>(new Node(problem.getInitial, problem.getInitialNode));
+  const exploredSet: string[] = [];
+  const frontier = new Queue<Node>(new Node(problem.getInitial, problem.getInitialNode));
 
   while(frontier.length > 0) {
+    iteration++;
     const node = frontier.dequeue();
+    exploredSet.push(node.state);
     if (problem.goal_test(node.state)) {
       const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
       console.log(`
-        Goal reached "${node.state}", using: ${algoName}. 
+        Goal reached "${node.state}", using: ${algoName} in ${iteration} iterations. 
         Path: ${result.path.split('.').reverse().join(' -> ')}. 
         Total cost: ${result.cost}
         `);
@@ -230,7 +234,12 @@ const bfsDemo = () => {
     }
     const addToFrontier = node.expand(problem);
     addToFrontier.forEach((node: Node) => {
-      frontier.enqueue(node);
+      if ( // Avoid path repetitions
+        !exploredSet.find(s => s === node.state) &&
+        !frontier.toArray().find(s => s.state === node.state)
+      ) {
+        frontier.enqueue(node);
+      }
     });
   }
 };
@@ -251,7 +260,7 @@ switch (program.demo) {
   }
 }
 
-console.log(`Demo end in ${performance.now() - t0} milliseconds`);
+console.log(`Demo end in ${((performance.now() - t0)/1000).toFixed(6)} seconds`);
 process.exit(0);
 
 function handleError(error: string) {
