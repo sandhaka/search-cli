@@ -9,7 +9,7 @@ import program from 'commander';
 
 //#region Setup
 
-const demos = ['bfs'];
+const demos = ['bfs', 'ucs'];
 
 program
   .name('AI.Js learning project')
@@ -45,7 +45,56 @@ const bfsDemo = () => {
   const problem = new FindingPathProblem('Milano', 'Venezia', solutionTree.nodes);
 
   const exploredSet: string[] = [];
-  const frontier = new Queue<Node>(new Node(problem.getInitial, problem.getInitialNode));
+  const frontier = new Queue<Node>([new Node(problem.getInitial, problem.getInitialNode)]);
+
+  while(frontier.length > 0) {
+    iteration++;
+    const node = frontier.dequeue();
+    exploredSet.push(node.state);
+    if (problem.goal_test(node.state)) {
+      const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
+      console.log(`
+        Goal reached "${node.state}", using: ${algoName} in ${iteration} iterations. 
+        Path: ${result.path.split('.').reverse().join(' -> ')}. 
+        Total cost: ${result.cost}
+        `);
+      break;
+    }
+    const addToFrontier = node.expand(problem);
+    addToFrontier.forEach((node: Node) => {
+      if ( // Avoid path repetitions
+        !exploredSet.find(s => s === node.state) &&
+        !frontier.find(s => s.state === node.state)
+      ) {
+        frontier.enqueue(node);
+      }
+    });
+  }
+};
+
+//#endregion
+
+//#region Find best Path with "Uniform Cost Search"
+
+const ucsDemo = () => {
+  let iteration: number = 0;
+  const algoName = "Uniform Cost Search";
+  const directedGraph = Utility.makeCopy(NorthItalyDirectedGraph) as GraphNode[];
+  const solutionTree = Graph.makeUndirected(directedGraph);
+  const problem = new FindingPathProblem('Milano', 'Venezia', solutionTree.nodes);
+  const exploredSet: string[] = [];
+  // Create a FIFO queue with priority (by path cost).
+  const frontier = new Queue<Node>(
+    [new Node(problem.getInitial, problem.getInitialNode)],
+    (a,b) => {
+      if (a.path_cost > b.path_cost) {
+        return 1;
+      } else if (a.path_cost < b.path_cost) {
+        return -1
+      }
+      return 0;
+    },
+    true);
 
   while(frontier.length > 0) {
     iteration++;
@@ -81,6 +130,10 @@ const t0 = performance.now();
 switch (program.demo) {
   case 'bfs': {
     bfsDemo();
+    break;
+  }
+  case 'ucs': {
+    ucsDemo();
     break;
   }
   default: {

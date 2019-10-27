@@ -3,8 +3,12 @@ import { Utility } from './utility';
 export class Queue<T> {
 
   private _seq: T[];
+  private readonly _compareFn: (a:T, b:T) => number;
+  private readonly _autoSorter: boolean = false;
 
-  constructor(...items: T[]) {
+  constructor(items: T[], compareFn: (a:T, b:T) => number = null, autoSorter: boolean = false) {
+    this._compareFn = compareFn;
+    this._autoSorter = autoSorter;
     this._seq = [...items];
   }
 
@@ -22,6 +26,9 @@ export class Queue<T> {
 
   enqueue(item: T): void {
     this._seq.push(Utility.makeCopy(item));
+    if (this._autoSorter) {
+      this.sort(this._compareFn);
+    }
   }
 
   dequeue(): T {
