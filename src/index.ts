@@ -1,8 +1,9 @@
 import { performance } from 'perf_hooks';
-import { Graph } from './graph/graph';
+import { Graph, GraphNode } from './graph/graph';
 import { Node } from './node/node';
-import { Queue } from 'queue-typescript';
 import { FindingPathProblem } from './problem/finding-path-problem';
+import { NorthItalyDirectedGraph } from './resources/input-data';
+import { Queue } from './utils/queue';
 import { Utility } from './utils/utility';
 import program from 'commander';
 
@@ -38,182 +39,9 @@ console.log(`Play "${program.demo}" demo`);
 
 const bfsDemo = () => {
   let iteration: number = 0;
-  const directedGraphMap = [
-    {
-      State: "Milano",
-      Cost: 0,
-      Neighbors: [
-        {
-          State: "Monza",
-          Cost: 26,
-          Neighbors: []
-        },
-        {
-          State: "Treviglio",
-          Cost: 64,
-          Neighbors: []
-        },
-        {
-          State: "Crema",
-          Cost: 46,
-          Neighbors: []
-        },
-        {
-          State: "Piacenza",
-          Cost: 67,
-          Neighbors: []
-        },
-        {
-          State: "Rozzano",
-          Cost: 13,
-          Neighbors: []
-        }
-      ]
-    },
-    {
-      State: "Monza",
-      Cost: 0,
-      Neighbors: [
-        {
-          State: "Bergamo",
-          Cost: 45,
-          Neighbors: []
-        },
-      ]
-    },
-    {
-      State: "Rozzano",
-      Cost: 0,
-      Neighbors: [
-        {
-          State: "Pavia",
-          Cost: 33,
-          Neighbors: []
-        },
-      ]
-    },
-    {
-      State: "Treviglio",
-      Cost: 0,
-      Neighbors: [
-        {
-          State: "Brescia",
-          Cost: 57,
-          Neighbors: []
-        },
-      ]
-    },
-    {
-      State: "Crema",
-      Cost: 0,
-      Neighbors: [
-        {
-          State: "Cremona",
-          Cost: 42,
-          Neighbors: []
-        },
-      ]
-    },
-    {
-      State: "Piacenza",
-      Cost: 0,
-      Neighbors: [
-        {
-          State: "Cremona",
-          Cost: 43,
-          Neighbors: []
-        },
-      ]
-    },
-    {
-      State: "Brescia",
-      Cost: 0,
-      Neighbors: [
-        {
-          State: "Verona",
-          Cost: 74,
-          Neighbors: []
-        },
-        {
-          State: "Mantua",
-          Cost: 101,
-          Neighbors: []
-        }
-      ]
-    },
-    {
-      State: "Cremona",
-      Cost: 0,
-      Neighbors: [
-        {
-          State: "Mantua",
-          Cost: 72,
-          Neighbors: []
-        }
-      ]
-    },
-    {
-      State: "Verona",
-      Cost: 0,
-      Neighbors: [
-        {
-          State: "Vicenza",
-          Cost: 58,
-          Neighbors: []
-        },
-        {
-          State: "Padova",
-          Cost: 88,
-          Neighbors: []
-        },
-        {
-          State: "Mantua",
-          Cost: 48,
-          Neighbors: []
-        }
-      ]
-    },
-    {
-      State: "Vicenza",
-      Cost: 0,
-      Neighbors: [
-        {
-          State: "Treviso",
-          Cost: 58,
-          Neighbors: []
-        },
-        {
-          State: "Venezia",
-          Cost: 70,
-          Neighbors: []
-        }
-      ]
-    },
-    {
-      State: "Padova",
-      Cost: 0,
-      Neighbors: [
-        {
-          State: "Venezia",
-          Cost: 39,
-          Neighbors: []
-        }
-      ]
-    },
-    {
-      State: "Treviso",
-      Cost: 0,
-      Neighbors: [
-        {
-          State: "Venezia",
-          Cost: 41,
-          Neighbors: []
-        }
-      ]
-    }
-  ];
   const algoName = "Breadth First Search";
-  const solutionTree = Graph.makeUndirected(directedGraphMap);
+  const directedGraph = Utility.makeCopy(NorthItalyDirectedGraph) as GraphNode[];
+  const solutionTree = Graph.makeUndirected(directedGraph);
   const problem = new FindingPathProblem('Milano', 'Venezia', solutionTree.nodes);
 
   const exploredSet: string[] = [];
@@ -236,7 +64,7 @@ const bfsDemo = () => {
     addToFrontier.forEach((node: Node) => {
       if ( // Avoid path repetitions
         !exploredSet.find(s => s === node.state) &&
-        !frontier.toArray().find(s => s.state === node.state)
+        !frontier.find(s => s.state === node.state)
       ) {
         frontier.enqueue(node);
       }

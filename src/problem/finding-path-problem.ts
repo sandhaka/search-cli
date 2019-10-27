@@ -69,7 +69,7 @@ export class FindingPathProblem extends Problem {
     return this.graph.find(n => n.State === state);
   }
 
-  private getChildNode(parent: string, child: string): Partial<GraphNode> {
+  private getChildNode(parent: string, child: string): GraphNode {
     const parentNode = this.getNode(parent);
     if (parentNode) {
       return parentNode.Neighbors.find(n => n.State === child);

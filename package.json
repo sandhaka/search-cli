@@ -52,7 +52,6 @@
   },
   "dependencies": {
     "commander": "^3.0.2",
-    "queue-typescript": "^1.0.1",
     "sha.js": "^2.4.11"
   },
   "devDependencies": {
