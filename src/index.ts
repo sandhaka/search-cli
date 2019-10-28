@@ -83,6 +83,7 @@ const ucsDemo = () => {
   const solutionTree = Graph.makeUndirected(directedGraph);
   const problem = new FindingPathProblem('Milano', 'Venezia', solutionTree.nodes);
   const exploredSet: string[] = [];
+
   // Create a FIFO queue with priority (by path cost).
   const frontier = new Queue<Node>(
     [new Node(problem.getInitial, problem.getInitialNode)],
@@ -116,6 +117,12 @@ const ucsDemo = () => {
         !frontier.find(s => s.state === node.state)
       ) {
         frontier.enqueue(node);
+      } else {
+        const toReplace = frontier.find(i =>
+          i.state === node.state && i.path_cost > node.path_cost);
+        if (toReplace) {
+          frontier.replace(toReplace, node);
+        }
       }
     });
   }

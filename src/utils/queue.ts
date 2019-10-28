@@ -40,6 +40,11 @@ export class Queue<T> {
     return itemCopied;
   }
 
+  replace(oldItem: T, newItem: T): void {
+    const index = this._seq.indexOf(oldItem);
+    this._seq.splice(index, 1, newItem);
+  }
+
   sort(compareFn: (a:T, b:T) => number): void {
     this._seq.sort(compareFn);
   }
