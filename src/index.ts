@@ -3,6 +3,7 @@ import { Graph, GraphNode } from './graph/graph';
 import { Node } from './node/node';
 import { FindingPathProblem } from './problem/finding-path-problem';
 import { NorthItalyDirectedGraph } from './resources/input-data';
+import { FifoQ } from './utils/fifo-queue';
 import { Queue } from './utils/queue';
 import { Utility } from './utils/utility';
 import program from 'commander';
@@ -45,7 +46,7 @@ const bfsDemo = () => {
   const problem = new FindingPathProblem('Milano', 'Venezia', solutionTree.nodes);
 
   const exploredSet: string[] = [];
-  const frontier = new Queue<Node>([new Node(problem.getInitial, problem.getInitialNode)]);
+  const frontier = new FifoQ<Node>([new Node(problem.getInitial, problem.getInitialNode)]);
 
   while(frontier.length > 0) {
     iteration++;
@@ -85,7 +86,7 @@ const ucsDemo = () => {
   const exploredSet: string[] = [];
 
   // Create a FIFO queue with priority (by path cost).
-  const frontier = new Queue<Node>(
+  const frontier = new FifoQ<Node>(
     [new Node(problem.getInitial, problem.getInitialNode)],
     (a,b) => {
       if (a.path_cost > b.path_cost) {
