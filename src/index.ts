@@ -2,7 +2,10 @@ import { performance } from 'perf_hooks';
 import { Graph, GraphNode } from './graph/graph';
 import { Node } from './node/node';
 import { FindingPathProblem } from './problem/finding-path-problem';
-import { NorthItalyDirectedGraph } from './resources/input-data';
+import {
+  NorthItalyDirectedGraph,
+  RomaniaRoadMap
+} from './resources/input-data';
 import { FifoQ } from './utils/fifo-queue';
 import { Queue } from './utils/queue';
 import { Utility } from './utils/utility';
@@ -11,11 +14,17 @@ import program from 'commander';
 //#region Setup
 
 const demos = ['bfs', 'ucs'];
+const maps = ['romania', 'north-italy'];
+
+let map: GraphNode[];
+let start: string;
+let target: string;
 
 program
   .name('AI.Js learning project')
   .description('Collection about AI demos')
-  .option('-d, --demo <name>,', 'Demo to run')
+  .option('-d, --demo <name>', 'Demo to run')
+  .option('-m, --map <name>', 'Map to use')
   .option('-l, --list', 'Demo list')
   .version('0.1')
   .parse(process.argv);
@@ -25,6 +34,10 @@ if (program.list) {
   demos.forEach(d => {
     console.log(d);
   });
+  console.log("Available maps (problems): ");
+  maps.forEach(d => {
+    console.log(d);
+  });
   process.exit(0);
 }
 
@@ -32,7 +45,21 @@ if (!program.demo) {
   handleError('Missing demo parameter');
 }
 
-console.log(`Play "${program.demo}" demo`);
+switch (program.map) {
+  case 'romania': {
+    map = RomaniaRoadMap;
+    start = 'Arad';
+    target = 'Bucharest';
+    break;
+  }
+  default: {
+    map = NorthItalyDirectedGraph;
+    start = 'Milano';
+    target = 'Venezia';
+  }
+}
+
+console.log(`Play "${program.demo}" demo, using map: "${program.map}"`);
 
 //#endregion
 
@@ -41,9 +68,9 @@ console.log(`Play "${program.demo}" demo`);
 const bfsDemo = () => {
   let iteration: number = 0;
   const algoName = "Breadth First Search";
-  const directedGraph = Utility.makeCopy(NorthItalyDirectedGraph) as GraphNode[];
+  const directedGraph = Utility.makeCopy(map) as GraphNode[];
   const solutionTree = Graph.makeUndirected(directedGraph);
-  const problem = new FindingPathProblem('Milano', 'Venezia', solutionTree.nodes);
+  const problem = new FindingPathProblem(start, target, solutionTree.nodes);
 
   const exploredSet: string[] = [];
   const frontier = new FifoQ<Node>([new Node(problem.getInitial, problem.getInitialNode)]);
@@ -80,9 +107,9 @@ const bfsDemo = () => {
 const ucsDemo = () => {
   let iteration: number = 0;
   const algoName = "Uniform Cost Search";
-  const directedGraph = Utility.makeCopy(NorthItalyDirectedGraph) as GraphNode[];
+  const directedGraph = Utility.makeCopy(map) as GraphNode[];
   const solutionTree = Graph.makeUndirected(directedGraph);
-  const problem = new FindingPathProblem('Milano', 'Venezia', solutionTree.nodes);
+  const problem = new FindingPathProblem(start, target, solutionTree.nodes);
   const exploredSet: string[] = [];
 
   // Create a FIFO queue with priority (by path cost).
