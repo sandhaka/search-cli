@@ -12,10 +12,10 @@ import program from 'commander';
 
 //#region Cli Setup
 
-const demos = ['bfs', 'ucs', 'dfs'];
+const demos = ['bfs', 'ucs', 'dfs', 'iddfs'];
 const maps = ['romania', 'north-italy'];
 
-let demo: string;
+let demo: string = '-';
 let map: GraphNode[];
 let start: string;
 let target: string;
@@ -28,27 +28,22 @@ program
   .option('-c, --configs <params>',
     'Configurations (syntax: \'par1=value1,par2=value2...\')',
     (configs: string) => {
-      if (configs.match('.*?=.{1}')) { // Test if one config at least are set correctly
-        const algoParams = configs.split(',');
-        algoParams.forEach((parameter: string) => {
-          const config = parameter.split('=');
-          if (config.length != 2) {
-            console.warn(`Unable to set this config: ${config}`);
-            return;
-          }
-          const key = config[0];
-          const value = config[1];
-          algConfigs.push({ key: key, value: value });
-        });
-      } else {
-        console.warn('Invalid configuration supplied. Continue without it.')
-      }
+      const algoParams = configs.split(',');
+      algoParams.forEach((parameter: string) => {
+        if (!parameter.match('.*?=.{1}')) {
+          console.warn(`Unable to set this config: ${parameter}`);
+          return;
+        }
+        const config = parameter.split('=');
+        algConfigs.push({ key: config[0], value: config[1] });
+      });
     })
-  .action((cmd, args) => {
-    demo = args;
-    if (!demo) {
+  .action((cmd, arg) => {
+    if (!demos.find(d => d === arg)) {
+      console.error('Unknown demo / Check command line parameters.');
       process.exit(-1);
     }
+    demo = arg;
   })
   .option('-m, --map <name>', 'Map to use')
   .option('-l, --list', 'Demo list')
@@ -188,6 +183,28 @@ const ucsDemo = () => {
 
 //#region Find best Path with 'Depth First Search'
 
+const recursiveDls = (node: Node, problem: FindingPathProblem, limit: number, exploredSet: string[]): Node => {
+  exploredSet.push(node.state);
+  if (problem.goal_test(node.state)) {
+    return node;
+  } else {
+    const nodes = node.expand(problem);
+    let found = null;
+    for (let i = 0; i < nodes.length; i++) {
+      if (exploredSet.find(n => n === nodes[i].state)) {
+        continue;
+      } else if (limit - 1 === 0) {
+        break;
+      }
+      found = recursiveDls(nodes[i], problem, limit - 1, exploredSet);
+      if (found) {
+        break;
+      }
+    }
+    return found;
+  }
+};
+
 const dfsDemo = () => {
   // Looking for valid config for the current algorithm
   const limitConfig = algConfigs.find(k => k.key === 'limit');
@@ -199,31 +216,8 @@ const dfsDemo = () => {
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
   const exploredSet: string[] = [];
 
-  const recursiveDls = (node: Node, problem: FindingPathProblem, limit: number): Node => {
-    exploredSet.push(node.state);
-    if (problem.goal_test(node.state)) {
-      return node;
-    } else {
-      const nodes = node.expand(problem);
-      let found = null;
-      for (let i = 0; i < nodes.length; i++) {
-        if (exploredSet.find(n => n === nodes[i].state)) {
-          continue;
-        } else if (limit - 1 === 0) {
-          console.log('Max depth reached');
-          break;
-        }
-        found = recursiveDls(nodes[i], problem, limit - 1);
-        if (found) {
-          break;
-        }
-      }
-      return found;
-    }
-  };
-
   const node = recursiveDls(
-    new Node(problem.getInitial, problem.getInitialNode), problem, parseInt(limit)
+    new Node(problem.getInitial, problem.getInitialNode), problem, parseInt(limit), exploredSet
   );
   if (node) {
     const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
@@ -236,6 +230,39 @@ const dfsDemo = () => {
   } else {
     console.log(`\nSolution not found!.\n`);
   }
+};
+
+//#endregion
+
+//#region Find best Path with 'Iterative Deepening Depth First Search'
+
+const iddfs = () => {
+  // Looking for valid config for the current algorithm
+  const limitConfig = algConfigs.find(k => k.key === 'limit');
+  const maxLimit = limitConfig ? limitConfig!.value : 10;
+
+  const algoName = 'Iterative Depth First Search';
+  const directedGraph = Utility.makeCopy(map) as GraphNode[];
+  const solutionTree = Graph.makeUndirected(directedGraph);
+  const problem = new FindingPathProblem(start, target, solutionTree.nodes);
+
+  for (let i = 1; i <= maxLimit; i++) {
+    const exploredSet: string[] = [];
+    const node = recursiveDls(
+      new Node(problem.getInitial, problem.getInitialNode), problem, i, exploredSet
+    );
+    if (node) {
+      const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
+      const solutionPath = result.path.split('.');
+      console.log(`
+            Goal reached '${node.state}' at depth ${solutionPath.length}, using: ${algoName}. 
+            Path: ${solutionPath.reverse().join(' -> ')}. 
+            Total cost: ${result.cost}
+          `);
+      return;
+    }
+  }
+  console.log(`\nSolution not found!.\n`);
 };
 
 //#endregion
@@ -257,17 +284,13 @@ switch (demo) {
     dfsDemo();
     break;
   }
-  default: {
-    handleError('Unknown demo: ' + demo);
+  case 'iddfs': {
+    iddfs();
+    break;
   }
 }
 
 console.log(`Demo end in ${((performance.now() - t0)/1000).toFixed(6)} seconds`);
 process.exit(0);
-
-function handleError(error: string) {
-  console.error(error);
-  process.exit(-1);
-}
 
 //#endregion
