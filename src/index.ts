@@ -7,42 +7,64 @@ import {
   RomaniaRoadMap
 } from './resources/input-data';
 import { FifoQ } from './utils/fifo-queue';
-import { Queue } from './utils/queue';
 import { Utility } from './utils/utility';
 import program from 'commander';
 
-//#region Setup
+//#region Cli Setup
 
-const demos = ['bfs', 'ucs'];
+const demos = ['bfs', 'ucs', 'dfs'];
 const maps = ['romania', 'north-italy'];
 
+let demo: string;
 let map: GraphNode[];
 let start: string;
 let target: string;
+const algConfigs: {key: any, value: any}[] = [];
 
 program
   .name('AI.Js learning project')
   .description('Collection about AI demos')
-  .option('-d, --demo <name>', 'Demo to run')
+  .command('demo <name>', 'Demo to run')
+  .option('-c, --configs <params>',
+    'Configurations (syntax: \'par1=value1,par2=value2...\')',
+    (configs: string) => {
+      if (configs.match('.*?=.{1}')) { // Test if one config at least are set correctly
+        const algoParams = configs.split(',');
+        algoParams.forEach((parameter: string) => {
+          const config = parameter.split('=');
+          if (config.length != 2) {
+            console.warn(`Unable to set this config: ${config}`);
+            return;
+          }
+          const key = config[0];
+          const value = config[1];
+          algConfigs.push({ key: key, value: value });
+        });
+      } else {
+        console.warn('Invalid configuration supplied. Continue without it.')
+      }
+    })
+  .action((cmd, args) => {
+    demo = args;
+    if (!demo) {
+      process.exit(-1);
+    }
+  })
   .option('-m, --map <name>', 'Map to use')
   .option('-l, --list', 'Demo list')
   .version('0.1')
   .parse(process.argv);
 
 if (program.list) {
-  console.log("Available demos: ");
+  console.log('Available demos: ');
   demos.forEach(d => {
     console.log(d);
   });
-  console.log("Available maps (problems): ");
+  console.log('Available maps (problems): ');
   maps.forEach(d => {
     console.log(d);
   });
   process.exit(0);
-}
-
-if (!program.demo) {
-  handleError('Missing demo parameter');
 }
 
 switch (program.map) {
@@ -53,21 +75,25 @@ switch (program.map) {
     break;
   }
   default: {
+    program.map = 'north-italy';
     map = NorthItalyDirectedGraph;
     start = 'Milano';
     target = 'Venezia';
   }
 }
 
-console.log(`Play "${program.demo}" demo, using map: "${program.map}"`);
+console.log(`Play '${demo}' demo, using map: '${program.map}'`);
+if (algConfigs.length > 0) {
+  console.log(`With config: ${JSON.stringify(algConfigs, null, 2)}`);
+}
 
 //#endregion
 
-//#region Find best Path with "Breadth First Search"
+//#region Find best Path with 'Breadth First Search'
 
 const bfsDemo = () => {
   let iteration: number = 0;
-  const algoName = "Breadth First Search";
+  const algoName = 'Breadth First Search';
   const directedGraph = Utility.makeCopy(map) as GraphNode[];
   const solutionTree = Graph.makeUndirected(directedGraph);
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
@@ -82,11 +108,11 @@ const bfsDemo = () => {
     if (problem.goal_test(node.state)) {
       const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
       console.log(`
-        Goal reached "${node.state}", using: ${algoName} in ${iteration} iterations. 
+        Goal reached '${node.state}', using: ${algoName} in ${iteration} iterations. 
         Path: ${result.path.split('.').reverse().join(' -> ')}. 
         Total cost: ${result.cost}
         `);
-      break;
+      return;
     }
     const addToFrontier = node.expand(problem);
     addToFrontier.forEach((node: Node) => {
@@ -98,15 +124,16 @@ const bfsDemo = () => {
       }
     });
   }
+  console.log(`\nSolution not found! After ${iteration} iterations.\n`);
 };
 
 //#endregion
 
-//#region Find best Path with "Uniform Cost Search"
+//#region Find best Path with 'Uniform Cost Search'
 
 const ucsDemo = () => {
   let iteration: number = 0;
-  const algoName = "Uniform Cost Search";
+  const algoName = 'Uniform Cost Search';
   const directedGraph = Utility.makeCopy(map) as GraphNode[];
   const solutionTree = Graph.makeUndirected(directedGraph);
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
@@ -132,11 +159,11 @@ const ucsDemo = () => {
     if (problem.goal_test(node.state)) {
       const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
       console.log(`
-        Goal reached "${node.state}", using: ${algoName} in ${iteration} iterations. 
+        Goal reached '${node.state}', using: ${algoName} in ${iteration} iterations. 
         Path: ${result.path.split('.').reverse().join(' -> ')}. 
         Total cost: ${result.cost}
         `);
-      break;
+      return;
     }
     const addToFrontier = node.expand(problem);
     addToFrontier.forEach((node: Node) => {
@@ -154,6 +181,61 @@ const ucsDemo = () => {
       }
     });
   }
+  console.log(`\nSolution not found! After ${iteration} iterations.\n`);
+};
+
+//#endregion
+
+//#region Find best Path with 'Depth First Search'
+
+const dfsDemo = () => {
+  // Looking for valid config for the current algorithm
+  const limitConfig = algConfigs.find(k => k.key === 'limit');
+  const limit = limitConfig ? limitConfig!.value : 10;
+
+  const algoName = 'Depth First Search';
+  const directedGraph = Utility.makeCopy(map) as GraphNode[];
+  const solutionTree = Graph.makeUndirected(directedGraph);
+  const problem = new FindingPathProblem(start, target, solutionTree.nodes);
+  const exploredSet: string[] = [];
+
+  const recursiveDls = (node: Node, problem: FindingPathProblem, limit: number): Node => {
+    exploredSet.push(node.state);
+    if (problem.goal_test(node.state)) {
+      return node;
+    } else {
+      const nodes = node.expand(problem);
+      let found = null;
+      for (let i = 0; i < nodes.length; i++) {
+        if (exploredSet.find(n => n === nodes[i].state)) {
+          continue;
+        } else if (limit - 1 === 0) {
+          console.log('Max depth reached');
+          break;
+        }
+        found = recursiveDls(nodes[i], problem, limit - 1);
+        if (found) {
+          break;
+        }
+      }
+      return found;
+    }
+  };
+
+  const node = recursiveDls(
+    new Node(problem.getInitial, problem.getInitialNode), problem, parseInt(limit)
+  );
+  if (node) {
+    const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
+    const solutionPath = result.path.split('.');
+    console.log(`
+            Goal reached '${node.state}' at depth ${solutionPath.length}, using: ${algoName} (Depth limit: ${limit}). 
+            Path: ${solutionPath.reverse().join(' -> ')}. 
+            Total cost: ${result.cost}
+          `);
+  } else {
+    console.log(`\nSolution not found!.\n`);
+  }
 };
 
 //#endregion
@@ -162,7 +244,7 @@ const ucsDemo = () => {
 
 const t0 = performance.now();
 
-switch (program.demo) {
+switch (demo) {
   case 'bfs': {
     bfsDemo();
     break;
@@ -171,8 +253,12 @@ switch (program.demo) {
     ucsDemo();
     break;
   }
+  case 'dfs': {
+    dfsDemo();
+    break;
+  }
   default: {
-    handleError('Unknown demo: ' + program.demo);
+    handleError('Unknown demo: ' + demo);
   }
 }
 
