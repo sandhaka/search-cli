@@ -23,7 +23,7 @@ const algConfigs: {key: any, value: any}[] = [];
 
 program
   .name('AI.Js learning project')
-  .description('Collection about AI demos')
+  .description('Collection about AI demos' + Utility.header)
   .command('demo <name>', 'Demo to run')
   .option('-c, --configs <params>',
     'Configurations (syntax: \'par1=value1,par2=value2...\')',
@@ -31,7 +31,7 @@ program
       const algoParams = configs.split(',');
       algoParams.forEach((parameter: string) => {
         if (!parameter.match('.*?=.{1}')) {
-          console.warn(`Unable to set this config: ${parameter}`);
+          warning(`Unable to set this config: ${parameter}`);
           return;
         }
         const config = parameter.split('=');
@@ -40,15 +40,17 @@ program
     })
   .action((cmd, arg) => {
     if (!demos.find(d => d === arg)) {
-      console.error('Unknown demo / Check command line parameters.');
+      warning('Unknown demo / Check command line parameters.');
       process.exit(-1);
     }
     demo = arg;
   })
   .option('-m, --map <name>', 'Map to use')
   .option('-l, --list', 'Demo list')
-  .version('0.1')
-  .parse(process.argv);
+  .option('-d, --debug', 'Enable debug logs')
+  .version('0.1');
+
+program.parse(process.argv);
 
 if (program.list) {
   console.log('Available demos: ');
@@ -77,9 +79,22 @@ switch (program.map) {
   }
 }
 
-console.log(`Play '${demo}' demo, using map: '${program.map}'`);
-if (algConfigs.length > 0) {
-  console.log(`With config: ${JSON.stringify(algConfigs, null, 2)}`);
+//#endregion
+
+//#region Console
+
+function debug(message: string): void {
+  if (program.debug) {
+    console.log('\x1b[33m%s\x1b[0m', `[DEBUG] ${message}`);
+  }
+}
+
+function warning(message: string) {
+  console.log('\x1b[31m%s\x1b[0m', message);
+}
+
+function highlighted(message: string) {
+  console.log('\x1b[32m%s\x1b[0m', message);
 }
 
 //#endregion
@@ -100,9 +115,10 @@ const bfsDemo = () => {
     iteration++;
     const node = frontier.dequeue();
     exploredSet.push(node.state);
+    debug(`Dequeued node ${node.state} from frontier`);
     if (problem.goal_test(node.state)) {
       const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
-      console.log(`
+      highlighted(`
         Goal reached '${node.state}', using: ${algoName} in ${iteration} iterations. 
         Path: ${result.path.split('.').reverse().join(' -> ')}. 
         Total cost: ${result.cost}
@@ -110,16 +126,20 @@ const bfsDemo = () => {
       return;
     }
     const addToFrontier = node.expand(problem);
+    debug(`Is not a goal, then expanding it in: ${addToFrontier.map(n => n.state).join(', ')}`);
     addToFrontier.forEach((node: Node) => {
       if ( // Avoid path repetitions
         !exploredSet.find(s => s === node.state) &&
         !frontier.find(s => s.state === node.state)
       ) {
+        debug(`Enqueue node ${node.state} in frontier`);
         frontier.enqueue(node);
+      } else {
+        debug(`Discard node ${node.state}, has already been visited`);
       }
     });
   }
-  console.log(`\nSolution not found! After ${iteration} iterations.\n`);
+  warning(`\nSolution not found! After ${iteration} iterations.\n`);
 };
 
 //#endregion
@@ -151,9 +171,10 @@ const ucsDemo = () => {
     iteration++;
     const node = frontier.dequeue();
     exploredSet.push(node.state);
+    debug(`Dequeued node ${node.state} from frontier`);
     if (problem.goal_test(node.state)) {
       const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
-      console.log(`
+      highlighted(`
         Goal reached '${node.state}', using: ${algoName} in ${iteration} iterations. 
         Path: ${result.path.split('.').reverse().join(' -> ')}. 
         Total cost: ${result.cost}
@@ -161,46 +182,63 @@ const ucsDemo = () => {
       return;
     }
     const addToFrontier = node.expand(problem);
+    debug(`Is not a goal, then expanding it in: ${addToFrontier.map(n => n.state).join(', ')}`);
     addToFrontier.forEach((node: Node) => {
       if ( // Avoid path repetitions
         !exploredSet.find(s => s === node.state) &&
         !frontier.find(s => s.state === node.state)
       ) {
+        debug(`Enqueue node ${node.state} in frontier`);
         frontier.enqueue(node);
       } else {
         const toReplace = frontier.find(i =>
           i.state === node.state && i.path_cost > node.path_cost);
         if (toReplace) {
+          debug(`Replace node ${node.state} in frontier, new path is less expensive, new path cost: ${node.path_cost}, old one: ${toReplace.path_cost}`);
           frontier.replace(toReplace, node);
+        } else {
+          debug(`Discard node ${node.state} hasn't a lower path cost`);
         }
       }
     });
   }
-  console.log(`\nSolution not found! After ${iteration} iterations.\n`);
+  warning(`\nSolution not found! After ${iteration} iterations.\n`);
 };
 
 //#endregion
 
 //#region Find best Path with 'Depth First Search'
 
-const recursiveDls = (node: Node, problem: FindingPathProblem, limit: number, exploredSet: string[]): Node => {
+const recursiveDls = (
+  depth: number,
+  node: Node,
+  problem: FindingPathProblem,
+  limit: number,
+  exploredSet: string[]
+): Node => {
+  debug(`Entering tree at depth ${depth}`);
   exploredSet.push(node.state);
+  debug(`Visit node ${node.state}`);
   if (problem.goal_test(node.state)) {
     return node;
   } else {
+    if (limit - depth === 0) {
+      debug('Depth limit reached');
+      return null;
+    }
     const nodes = node.expand(problem);
+    debug(`Is not a goal, then expanding it in: ${nodes.map(n => n.state).join(', ')}`);
     let found = null;
     for (let i = 0; i < nodes.length; i++) {
       if (exploredSet.find(n => n === nodes[i].state)) {
         continue;
-      } else if (limit - 1 === 0) {
-        break;
       }
-      found = recursiveDls(nodes[i], problem, limit - 1, exploredSet);
+      found = recursiveDls(depth + 1, nodes[i], problem, limit, exploredSet);
       if (found) {
         break;
       }
     }
+    debug(`Go back to depth level: ${depth - 1}`);
     return found;
   }
 };
@@ -217,18 +255,18 @@ const dfsDemo = () => {
   const exploredSet: string[] = [];
 
   const node = recursiveDls(
-    new Node(problem.getInitial, problem.getInitialNode), problem, parseInt(limit), exploredSet
+    1, new Node(problem.getInitial, problem.getInitialNode), problem, parseInt(limit), exploredSet
   );
   if (node) {
     const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
     const solutionPath = result.path.split('.');
-    console.log(`
+    highlighted(`
             Goal reached '${node.state}' at depth ${solutionPath.length}, using: ${algoName} (Depth limit: ${limit}). 
             Path: ${solutionPath.reverse().join(' -> ')}. 
             Total cost: ${result.cost}
           `);
   } else {
-    console.log(`\nSolution not found!.\n`);
+    warning(`\nSolution not found!.\n`);
   }
 };
 
@@ -247,22 +285,24 @@ const iddfs = () => {
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
 
   for (let i = 1; i <= maxLimit; i++) {
+    debug(`Start iteration with limit ${i}`);
     const exploredSet: string[] = [];
     const node = recursiveDls(
-      new Node(problem.getInitial, problem.getInitialNode), problem, i, exploredSet
+      1, new Node(problem.getInitial, problem.getInitialNode), problem, i, exploredSet
     );
     if (node) {
       const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
       const solutionPath = result.path.split('.');
-      console.log(`
+      highlighted(`
             Goal reached '${node.state}' at depth ${solutionPath.length}, using: ${algoName}. 
             Path: ${solutionPath.reverse().join(' -> ')}. 
             Total cost: ${result.cost}
           `);
       return;
     }
+    debug(`Limit increasing`);
   }
-  console.log(`\nSolution not found!.\n`);
+  warning(`\nSolution not found!.\n`);
 };
 
 //#endregion
@@ -270,25 +310,37 @@ const iddfs = () => {
 //#region Main
 
 const t0 = performance.now();
+let f: () => void;
 
 switch (demo) {
   case 'bfs': {
-    bfsDemo();
+    f = bfsDemo;
     break;
   }
   case 'ucs': {
-    ucsDemo();
+    f = ucsDemo;
     break;
   }
   case 'dfs': {
-    dfsDemo();
+    f = dfsDemo;
     break;
   }
   case 'iddfs': {
-    iddfs();
+    f = iddfs;
     break;
   }
+  case '-': {
+    console.error('No demo chosen, see --help output for details');
+    process.exit(-1);
+  }
 }
+
+console.log(`Play '${demo}' demo, using map: '${program.map}'`);
+if (algConfigs.length > 0) {
+  console.log(`With config: ${JSON.stringify(algConfigs, null, 2)}`);
+}
+
+f();
 
 console.log(`Demo end in ${((performance.now() - t0)/1000).toFixed(6)} seconds`);
 process.exit(0);
