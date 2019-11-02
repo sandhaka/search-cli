@@ -22,8 +22,8 @@ let target: string;
 const algConfigs: {key: any, value: any}[] = [];
 
 program
-  .name('AI.Js learning project')
-  .description('Collection about AI demos' + Utility.header)
+  .name('node index.js')
+  .description('AI.Js learning project - Collection about AI demos' + Utility.header)
   .command('demo <name>', 'Demo to run')
   .option('-c, --configs <params>',
     'Configurations (syntax: \'par1=value1,par2=value2...\')',
