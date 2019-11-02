@@ -1,7 +1,7 @@
-# lrn.cli
-> Learning stuff inspired from "Artificial Intelligence by Peter Norvig & Stuart Russell".
+# AI lrn.cli "ZERO-LIBRARY"
+> Learning stuff inspired by "Peter Norvig & Stuart Russell approach".
+> Why Zero-Library? Because the hard-way is always the best way to understand things.
 
-#### Is a cli with a collection of demo to run.
 
 ```bash
 $ node index.js --help
