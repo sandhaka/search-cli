@@ -1,6 +1,9 @@
-import { GraphNode } from '../graph/graph';
+import { GraphNode, GraphPoint } from '../graph/graph';
 
 export class Utility {
+
+  //#region Objects
+
   static ExplodePathInPlainText(
     index: number,
     cost: number,
@@ -44,6 +47,19 @@ export class Utility {
     return obj != null && obj.constructor.name === 'Object';
   }
 
+  //#endregion
+
+  //#region Math
+
+  static distanceOnGraph(a: GraphPoint, b: GraphPoint): number {
+    /* Apply hypotenuse calculation to graph points */
+    return Math.hypot((a.x - b.x), (a.y - b.y));
+  }
+
+  //#endregion
+
+  //#region Others
+
   static get header(): string {
     return `
   
@@ -71,4 +87,6 @@ ______________________________________________________________
 ______________________________________________________________                         
 `;
   }
+
+  //#endregion
 }

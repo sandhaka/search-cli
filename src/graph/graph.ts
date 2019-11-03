@@ -14,6 +14,11 @@ export interface GraphNode {
   Neighbors: GraphNode[]
 }
 
+export interface GraphPoint {
+  x: number;
+  y: number;
+}
+
 export class Graph {
 
   private readonly dict: GraphNode[];

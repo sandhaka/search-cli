@@ -45,3 +45,7 @@ Commands:
   demo <name>             Demo to run
   help [cmd]              display help for [cmd]
 ```
+
+#### In progress stuff / TODO:
+- Start / Target Node customization by config
+- Implement new "Puzzle" Problem, taken from textbooks

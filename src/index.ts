@@ -1,9 +1,9 @@
 import { performance } from 'perf_hooks';
-import { Graph, GraphNode } from './graph/graph';
+import { Graph, GraphNode, GraphPoint } from './graph/graph';
 import { Node } from './node/node';
 import { FindingPathProblem } from './problem/finding-path-problem';
 import {
-  NorthItalyDirectedGraph,
+  NorthItalyDirectedGraph, RomaniaLocations,
   RomaniaRoadMap
 } from './resources/input-data';
 import { FifoQ } from './utils/fifo-queue';
@@ -12,7 +12,7 @@ import program from 'commander';
 
 //#region Cli Setup
 
-const demos = ['bfs', 'ucs', 'dfs', 'iddfs'];
+const demos = ['bfs', 'ucs', 'dfs', 'iddfs', 'as'];
 const maps = ['romania', 'north-italy'];
 
 let demo: string = '-';
@@ -76,6 +76,12 @@ switch (program.map) {
     map = NorthItalyDirectedGraph;
     start = 'Milano';
     target = 'Venezia';
+
+    // Sanity checks
+    if (demo === 'as') {
+      warning('A* search cannot be used with north-italy since locations for this maps has not been implemented.');
+      process.exit(-1);
+    }
   }
 }
 
@@ -98,6 +104,58 @@ function highlighted(message: string) {
 }
 
 //#endregion
+
+// 'Best First Graph search' has a priority queue and some pre-knowledge defined
+// at startup in order to choose the best path during graph/tree exploration
+function BestFirstGraphSearch(
+  pathCostFunc: (node: Node, target: string) => number,   // Cost Evaluator
+  problem: FindingPathProblem,                            // Problem
+  queue: FifoQ<Node>,                                     // A Priority queue
+  algoName: string) {                                     // Algo name
+
+  const frontier = queue;
+  let iteration = 0;
+  const exploredSet: string[] = [];
+
+  while(frontier.length > 0) {
+    iteration++;
+    const node = frontier.dequeue();
+    exploredSet.push(node.state);
+    debug(`Dequeued node ${node.state} from frontier`);
+    if (problem.goal_test(node.state)) {
+      const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
+      highlighted(`
+        Goal reached '${node.state}', using: ${algoName} in ${iteration} iterations. 
+        Path: ${result.path.split('.').reverse().join(' -> ')}. 
+        Total cost: ${result.cost}
+        `);
+      return;
+    }
+    const addToFrontier = node.expand(problem);
+    debug(`Is not a goal, then expanding it in: ${addToFrontier.map(n => n.state).join(', ')}`);
+    addToFrontier.forEach((node: Node) => {
+      if ( // Avoid path repetitions
+        !exploredSet.find(s => s === node.state) &&
+        !frontier.find(s => s.state === node.state)
+      ) {
+        debug(`Enqueue node ${node.state} in frontier`);
+        frontier.enqueue(node);
+      } else {
+        const toReplace = frontier.find(i =>
+          i.state === node.state && pathCostFunc(i, target) > pathCostFunc(node, target));
+        if (toReplace) {
+          debug(`Replace node ${node.state} in frontier, new path is less expensive, new path cost: ${node.path_cost}, old one: ${toReplace.path_cost}`);
+          frontier.replace(toReplace, node);
+        } else {
+          debug(`Discard node ${node.state} hasn't a lower path cost`);
+        }
+      }
+    });
+  }
+  warning(`\nSolution not found! After ${iteration} iterations.\n`);
+}
+
+//#region Uninformed Search
 
 //#region Find best Path with 'Breadth First Search'
 
@@ -147,12 +205,10 @@ const bfsDemo = () => {
 //#region Find best Path with 'Uniform Cost Search'
 
 const ucsDemo = () => {
-  let iteration: number = 0;
   const algoName = 'Uniform Cost Search';
   const directedGraph = Utility.makeCopy(map) as GraphNode[];
   const solutionTree = Graph.makeUndirected(directedGraph);
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
-  const exploredSet: string[] = [];
 
   // Create a FIFO queue with priority (by path cost).
   const frontier = new FifoQ<Node>(
@@ -167,42 +223,14 @@ const ucsDemo = () => {
     },
     true);
 
-  while(frontier.length > 0) {
-    iteration++;
-    const node = frontier.dequeue();
-    exploredSet.push(node.state);
-    debug(`Dequeued node ${node.state} from frontier`);
-    if (problem.goal_test(node.state)) {
-      const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
-      highlighted(`
-        Goal reached '${node.state}', using: ${algoName} in ${iteration} iterations. 
-        Path: ${result.path.split('.').reverse().join(' -> ')}. 
-        Total cost: ${result.cost}
-        `);
-      return;
-    }
-    const addToFrontier = node.expand(problem);
-    debug(`Is not a goal, then expanding it in: ${addToFrontier.map(n => n.state).join(', ')}`);
-    addToFrontier.forEach((node: Node) => {
-      if ( // Avoid path repetitions
-        !exploredSet.find(s => s === node.state) &&
-        !frontier.find(s => s.state === node.state)
-      ) {
-        debug(`Enqueue node ${node.state} in frontier`);
-        frontier.enqueue(node);
-      } else {
-        const toReplace = frontier.find(i =>
-          i.state === node.state && i.path_cost > node.path_cost);
-        if (toReplace) {
-          debug(`Replace node ${node.state} in frontier, new path is less expensive, new path cost: ${node.path_cost}, old one: ${toReplace.path_cost}`);
-          frontier.replace(toReplace, node);
-        } else {
-          debug(`Discard node ${node.state} hasn't a lower path cost`);
-        }
-      }
-    });
-  }
-  warning(`\nSolution not found! After ${iteration} iterations.\n`);
+  BestFirstGraphSearch(
+    // Uniform Cost Search use just the node path cost as is
+    (n: Node, target: string):number => {
+      return n.path_cost;
+    },
+    problem,
+    frontier,
+    algoName);
 };
 
 //#endregion
@@ -279,7 +307,7 @@ const iddfs = () => {
   const limitConfig = algConfigs.find(k => k.key === 'limit');
   const maxLimit = limitConfig ? limitConfig!.value : 10;
 
-  const algoName = 'Iterative Depth First Search';
+  const algoName = 'Iterative Deepening Depth First Search';
   const directedGraph = Utility.makeCopy(map) as GraphNode[];
   const solutionTree = Graph.makeUndirected(directedGraph);
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
@@ -307,6 +335,57 @@ const iddfs = () => {
 
 //#endregion
 
+//#endregion
+
+//#region Informed Search
+
+//#region Find best Path with 'A* Search'
+
+const as = () => {
+  const algoName = 'A-star Search';
+  const directedGraph = Utility.makeCopy(map) as GraphNode[];
+  const solutionTree = Graph.makeUndirected(directedGraph);
+  const problem = new FindingPathProblem(start, target, solutionTree.nodes);
+  const heuristicData = RomaniaLocations;
+  const heuristicPathCost = (node: Node, target: string): number => {
+    const nLoc = heuristicData.find(l => l.state === node.state);
+    const gLoc = heuristicData.find(l => l.state === target);
+    return node.path_cost + Utility.distanceOnGraph(
+      {x: nLoc.x, y: nLoc.y},
+      {x: gLoc.x, y: gLoc.y}
+    );
+  };
+  // Create a FIFO queue with priority (by path cost + heuristic knowledge).
+  const frontier = new FifoQ<Node>(
+    [new Node(problem.getInitial, problem.getInitialNode)],
+    // Compare function define how to define the 'priority' queue
+    (a,b) => {
+      const aCost = heuristicPathCost(a,target);
+      const bCost = heuristicPathCost(b, target);
+      if (aCost > bCost) {
+        return 1;
+      } else if (aCost < bCost) {
+        return -1;
+      }
+      return 0;
+    },
+    // Apply priority automatically
+    true);
+
+  BestFirstGraphSearch(
+    // A* Search use the node path cost and some heuristic knowledge
+    (n: Node, target: string):number => {
+      return heuristicPathCost(n, target);
+    },
+    problem,
+    frontier,
+    algoName);
+};
+
+//#endregion
+
+//#endregion
+
 //#region Main
 
 const t0 = performance.now();
@@ -327,6 +406,10 @@ switch (demo) {
   }
   case 'iddfs': {
     f = iddfs;
+    break;
+  }
+  case 'as': {
+    f = as;
     break;
   }
   case '-': {

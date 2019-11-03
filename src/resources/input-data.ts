@@ -373,3 +373,106 @@ export const RomaniaRoadMap = [
     ]
   }
 ];
+
+export const RomaniaLocations = [
+  {
+    state: 'Arad',
+    x: 91,
+    y: 492
+  },
+  {
+    state: 'Bucharest',
+    x: 400,
+    y: 327
+  },
+  {
+    state: 'Craiova',
+    x: 253,
+    y: 288
+  },
+  {
+    state: 'Drobeta',
+    x: 165,
+    y: 299
+  },
+  {
+    state: 'Eforie',
+    x: 562,
+    y: 293
+  },
+  {
+    state: 'Fagaras',
+    x: 305,
+    y: 449
+  },
+  {
+    state: 'Giurgiu',
+    x: 375,
+    y: 270
+  },
+  {
+    state: 'Hirsova',
+    x: 534,
+    y: 350
+  },
+  {
+    state: 'Iasi',
+    x: 473,
+    y: 506
+  },
+  {
+    state: 'Lugoj',
+    x: 165,
+    y: 379
+  },
+  {
+    state: 'Mehadia',
+    x: 168,
+    y: 339
+  },
+  {
+    state: 'Neamt',
+    x: 406,
+    y: 537
+  },
+  {
+    state: 'Oradea',
+    x: 131,
+    y: 571
+  },
+  {
+    state: 'Pitesti',
+    x: 320,
+    y: 368
+  },
+  {
+    state: 'Rimnicu',
+    x: 233,
+    y: 410
+  },
+  {
+    state: 'Sibiu',
+    x: 207,
+    y: 457
+  },
+  {
+    state: 'Timisoara',
+    x: 94,
+    y: 410
+  },
+  {
+    state: 'Urziceni',
+    x: 456,
+    y: 350
+  },
+  {
+    state: 'Vaslui',
+    x: 509,
+    y: 444
+  },
+  {
+    state: 'Zerind',
+    x: 108,
+    y: 531
+  }
+];
