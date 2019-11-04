@@ -47,5 +47,4 @@ Commands:
 ```
 
 #### In progress stuff / TODO:
-- Start / Target Node customization by config
 - Implement new "Puzzle" Problem, taken from textbooks

@@ -85,6 +85,8 @@ switch (program.map) {
   }
 }
 
+goalConfigHandler(algConfigs);
+
 //#endregion
 
 //#region Console
@@ -105,13 +107,26 @@ function highlighted(message: string) {
 
 //#endregion
 
+//#region Common
+
+function goalConfigHandler(configs: {key: any, value: any}[]): void {
+  const startConf = configs.find(c => c.key === 'state.start');
+  if (startConf && startConf.value && startConf.value !== '') {
+    start = startConf.value;
+  }
+  const targetConf = configs.find(c => c.key === 'state.target');
+  if (targetConf && targetConf.value && targetConf.value !== '') {
+    target = targetConf.value;
+  }
+}
+
 // 'Best First Graph search' has a priority queue and some pre-knowledge defined
 // at startup in order to choose the best path during graph/tree exploration
-function BestFirstGraphSearch(
-  pathCostFunc: (node: Node, target: string) => number,   // Cost Evaluator
-  problem: FindingPathProblem,                            // Problem
-  queue: FifoQ<Node>,                                     // A Priority queue
-  algoName: string) {                                     // Algo name
+function bestFirstGraphSearch(
+  pathCostFunc: (node: Node, target: string) => number,
+  problem: FindingPathProblem,
+  queue: FifoQ<Node>,
+  algoName: string) {
 
   const frontier = queue;
   let iteration = 0;
@@ -154,6 +169,8 @@ function BestFirstGraphSearch(
   }
   warning(`\nSolution not found! After ${iteration} iterations.\n`);
 }
+
+//#endregion
 
 //#region Uninformed Search
 
@@ -223,7 +240,7 @@ const ucsDemo = () => {
     },
     true);
 
-  BestFirstGraphSearch(
+  bestFirstGraphSearch(
     // Uniform Cost Search use just the node path cost as is
     (n: Node, target: string):number => {
       return n.path_cost;
@@ -372,7 +389,7 @@ const as = () => {
     // Apply priority automatically
     true);
 
-  BestFirstGraphSearch(
+  bestFirstGraphSearch(
     // A* Search use the node path cost and some heuristic knowledge
     (n: Node, target: string):number => {
       return heuristicPathCost(n, target);
