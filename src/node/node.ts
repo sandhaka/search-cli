@@ -12,15 +12,20 @@ export class Node {
   /**
    * Link to parent node
    */
-  parent: Node;
+  readonly parent: Node;
   /**
    * Linked action
    */
-  action: any;
+  readonly action: any;
   /**
    * 'Cost' to go from the parent node to this one
    */
-  path_cost: number;
+  readonly path_cost: number;
+
+  /**
+   * Dynamic cost utility used by heuristic algs
+   */
+  f: number = 0;
 
   constructor(state: any, action: any, parent: Node = null, path_cost: number = 0) {
     this.state = state;

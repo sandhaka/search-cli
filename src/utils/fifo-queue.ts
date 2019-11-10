@@ -27,5 +27,4 @@ export class FifoQ<T> extends Queue<T> {
     this._seq.splice(0,1);
     return itemCopied;
   }
-
 }

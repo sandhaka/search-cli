@@ -1,5 +1,5 @@
 import { performance } from 'perf_hooks';
-import { Graph, GraphNode, GraphPoint } from './graph/graph';
+import { Graph, GraphNode } from './graph/graph';
 import { Node } from './node/node';
 import { FindingPathProblem } from './problem/finding-path-problem';
 import {
@@ -12,7 +12,7 @@ import program from 'commander';
 
 //#region Cli Setup
 
-const demos = ['bfs', 'ucs', 'dfs', 'iddfs', 'as'];
+const demos = ['bfs', 'ucs', 'dfs', 'iddfs', 'as', 'rbfs'];
 const maps = ['romania', 'north-italy'];
 
 let demo: string = '-';
@@ -78,8 +78,8 @@ switch (program.map) {
     target = 'Venezia';
 
     // Sanity checks
-    if (demo === 'as') {
-      warning('A* search cannot be used with north-italy since locations for this maps has not been implemented.');
+    if (demo === 'as' || demo === 'rbfs') {
+      warning('A*|rbfs searches cannot be used with north-italy since locations for this maps has not been implemented.');
       process.exit(-1);
     }
   }
@@ -120,6 +120,18 @@ function goalConfigHandler(configs: {key: any, value: any}[]): void {
   }
 }
 
+function getUndirectedGraphOfCurrentMap(): Graph {
+  return Graph.makeUndirected(Utility.makeCopy(map) as GraphNode[]);
+}
+
+function getMapLocation(mapName: string): any[] {
+  if (mapName === 'romania') {
+    return RomaniaLocations;
+  }
+
+  return [];
+}
+
 // 'Best First Graph search' has a priority queue and some pre-knowledge defined
 // at startup in order to choose the best path during graph/tree exploration
 function bestFirstGraphSearch(
@@ -136,12 +148,13 @@ function bestFirstGraphSearch(
     iteration++;
     const node = frontier.dequeue();
     exploredSet.push(node.state);
-    debug(`Dequeued node ${node.state} from frontier`);
+    debug(`Visit node ${node.state}`);
     if (problem.goal_test(node.state)) {
       const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
+      const solutionPath = result.path.split('.');
       highlighted(`
-        Goal reached '${node.state}', using: ${algoName} in ${iteration} iterations. 
-        Path: ${result.path.split('.').reverse().join(' -> ')}. 
+        Goal reached '${node.state}' at depth: ${solutionPath.length}, using: ${algoName} in ${iteration} iterations. 
+        Path: ${solutionPath.reverse().join(' -> ')}. 
         Total cost: ${result.cost}
         `);
       return;
@@ -153,7 +166,6 @@ function bestFirstGraphSearch(
         !exploredSet.find(s => s === node.state) &&
         !frontier.find(s => s.state === node.state)
       ) {
-        debug(`Enqueue node ${node.state} in frontier`);
         frontier.enqueue(node);
       } else {
         const toReplace = frontier.find(i =>
@@ -179,8 +191,7 @@ function bestFirstGraphSearch(
 const bfsDemo = () => {
   let iteration: number = 0;
   const algoName = 'Breadth First Search';
-  const directedGraph = Utility.makeCopy(map) as GraphNode[];
-  const solutionTree = Graph.makeUndirected(directedGraph);
+  const solutionTree = getUndirectedGraphOfCurrentMap();
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
 
   const exploredSet: string[] = [];
@@ -190,12 +201,13 @@ const bfsDemo = () => {
     iteration++;
     const node = frontier.dequeue();
     exploredSet.push(node.state);
-    debug(`Dequeued node ${node.state} from frontier`);
+    debug(`Visit node ${node.state}`);
     if (problem.goal_test(node.state)) {
       const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
+      const solutionPath = result.path.split('.');
       highlighted(`
-        Goal reached '${node.state}', using: ${algoName} in ${iteration} iterations. 
-        Path: ${result.path.split('.').reverse().join(' -> ')}. 
+        Goal reached '${node.state}' at depth: ${solutionPath.length}, using: ${algoName} in ${iteration} iterations. 
+        Path: ${solutionPath.reverse().join(' -> ')}. 
         Total cost: ${result.cost}
         `);
       return;
@@ -223,8 +235,7 @@ const bfsDemo = () => {
 
 const ucsDemo = () => {
   const algoName = 'Uniform Cost Search';
-  const directedGraph = Utility.makeCopy(map) as GraphNode[];
-  const solutionTree = Graph.makeUndirected(directedGraph);
+  const solutionTree = getUndirectedGraphOfCurrentMap();
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
 
   // Create a FIFO queue with priority (by path cost).
@@ -323,10 +334,8 @@ const iddfs = () => {
   // Looking for valid config for the current algorithm
   const limitConfig = algConfigs.find(k => k.key === 'limit');
   const maxLimit = limitConfig ? limitConfig!.value : 10;
-
   const algoName = 'Iterative Deepening Depth First Search';
-  const directedGraph = Utility.makeCopy(map) as GraphNode[];
-  const solutionTree = Graph.makeUndirected(directedGraph);
+  const solutionTree = getUndirectedGraphOfCurrentMap();
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
 
   for (let i = 1; i <= maxLimit; i++) {
@@ -360,10 +369,10 @@ const iddfs = () => {
 
 const as = () => {
   const algoName = 'A-star Search';
-  const directedGraph = Utility.makeCopy(map) as GraphNode[];
-  const solutionTree = Graph.makeUndirected(directedGraph);
+  const solutionTree = getUndirectedGraphOfCurrentMap();
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
-  const heuristicData = RomaniaLocations;
+  const heuristicData = getMapLocation(program.map);
+
   const heuristicPathCost = (node: Node, target: string): number => {
     const nLoc = heuristicData.find(l => l.state === node.state);
     const gLoc = heuristicData.find(l => l.state === target);
@@ -401,6 +410,118 @@ const as = () => {
 
 //#endregion
 
+//#region Find best path with 'Recursive Best First Search'
+
+interface RbfsResult {
+  /**
+   * Node
+   */
+  node: Node,
+  /**
+   * A total cost (path cost + heuristic cost) of the discovered path
+   */
+  fCost: number
+}
+
+const rbfs = () => {
+  let iterations = 0;
+  const algoName = 'Recursive Best First Search';
+  const solutionTree = getUndirectedGraphOfCurrentMap();
+  const problem = new FindingPathProblem(start, target, solutionTree.nodes);
+  const heuristicData = getMapLocation(program.map);
+
+  const heuristicPathCost = (node: Node, target: string): number => {
+    const nLoc = heuristicData.find(l => l.state === node.state);
+    const gLoc = heuristicData.find(l => l.state === target);
+    return node.path_cost + Utility.distanceOnGraph(
+      {x: nLoc.x, y: nLoc.y},
+      {x: gLoc.x, y: gLoc.y}
+    );
+  };
+
+  const compareFn = (a: Node, b: Node) => {
+    if (a.f > b.f) {
+      return 1;
+    } else if (a.f < b.f) {
+      return -1;
+    }
+    return 0;
+  };
+
+  const recursiveRbfs = (problem: FindingPathProblem, node: Node, f_limit: number): RbfsResult => {
+    iterations++;
+
+    debug(`Visit node ${node.state}`);
+    if (problem.goal_test(node.state)) {
+      return { node: node, fCost: node.f };
+    }
+
+    const successors = node.expand(problem);
+    if (successors.length === 0) {
+      return { node: null, fCost: Infinity };
+    }
+    debug(`Is not a goal, then expanding it in: 
+  ${successors.map(n => n.state).join(', ')}`);
+    successors.forEach((child: Node) => {
+      const childF = heuristicPathCost(child, target);
+      child.f = Math.max(childF, node.f);
+    });
+
+    while (true) {
+      successors.sort(compareFn);
+      debug(`Evaluate next nodes by path cost + heuristic function, 
+  now are: |${successors.map(s => `${s.state}(${s.f.toFixed(2)})`).join('|')}|`);
+      let alternativeCost: number;
+      const best = successors[0];
+      if (best) {
+        debug(`Selected best node: ${best.state} with estimated cost to goal: ${best.f.toFixed(2)}`);
+      } else {
+        debug('Frontier is empty');
+        return { node: null, fCost: Infinity };
+      }
+      if (best.f > f_limit) {
+        debug(`Discard this best path via ${best.state} due to worst cost: 
+  (new -> ${best.f.toFixed(2)}) > (prev -> ${f_limit.toFixed(2)})`);
+        return { node: null, fCost: best.f };
+      }
+      if (successors.length > 1) {
+        alternativeCost = successors[1].f;
+        debug(`Selected an alternative path via ${successors[1].state} 
+  with estimated cost to goal: ${alternativeCost.toFixed(2)}`);
+      } else {
+        debug('Last node of the frontier reached');
+        alternativeCost = Infinity;
+      }
+      const res = recursiveRbfs(problem, best, Math.min(f_limit, alternativeCost));
+      best.f = res.fCost;
+      if (res.node) {
+        return { node: res.node, fCost: best.f };
+      } else {
+        debug(`Go back and select the alternative path from the frontier`);
+      }
+    }
+  };
+
+  const startNode = new Node(problem.getInitial, problem.getInitialNode);
+  startNode.f = heuristicPathCost(startNode, target);
+  const res = recursiveRbfs(problem, startNode, Infinity);
+
+  if (res.node) {
+    const result = Utility.ExplodePathInPlainText(0, 0, res.node.solution());
+    const solutionPath = result.path.split('.');
+    highlighted(`
+        Goal reached '${res.node.state}' at depth: ${solutionPath.length}, using: ${algoName}, total recursive iterations: ${iterations}. 
+        Path: ${solutionPath.reverse().join(' -> ')}. 
+        Total cost: ${result.cost}
+        `);
+    return;
+  } else {
+    warning(`\nSolution not found!\n`);
+  }
+};
+
+//#endregion
+
 //#endregion
 
 //#region Main
@@ -427,6 +548,10 @@ switch (demo) {
   }
   case 'as': {
     f = as;
+    break;
+  }
+  case 'rbfs': {
+    f = rbfs;
     break;
   }
   case '-': {

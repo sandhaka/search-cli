@@ -40,4 +40,8 @@ export abstract class Queue<T> {
     }
     return this._seq[this._seq.length - 1];
   }
+
+  at(index: number): T {
+    return this._seq[index];
+  }
 }
