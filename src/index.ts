@@ -1,12 +1,11 @@
 import { performance } from 'perf_hooks';
 import { Graph, GraphNode } from './graph/graph';
-import { Node } from './node/node';
 import { FindingPathProblem } from './problem/finding-path-problem';
 import {
   NorthItalyDirectedGraph, RomaniaLocations,
   RomaniaRoadMap
 } from './resources/input-data';
-import { FifoQ } from './utils/fifo-queue';
+import { Search } from './search/search';
 import { Utility } from './utils/utility';
 import program from 'commander';
 
@@ -87,6 +86,10 @@ switch (program.map) {
 
 goalConfigHandler(algConfigs);
 
+const search: Search = new Search(
+  debug, warning, highlighted, program, start, target
+);
+
 //#endregion
 
 //#region Console
@@ -132,395 +135,58 @@ function getMapLocation(mapName: string): any[] {
   return [];
 }
 
-// 'Best First Graph search' has a priority queue and some pre-knowledge defined
-// at startup in order to choose the best path during graph/tree exploration
-function bestFirstGraphSearch(
-  pathCostFunc: (node: Node, target: string) => number,
-  problem: FindingPathProblem,
-  queue: FifoQ<Node>,
-  algoName: string) {
-
-  const frontier = queue;
-  let iteration = 0;
-  const exploredSet: string[] = [];
-
-  while(frontier.length > 0) {
-    iteration++;
-    const node = frontier.dequeue();
-    exploredSet.push(node.state);
-    debug(`Visit node ${node.state}`);
-    if (problem.goal_test(node.state)) {
-      const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
-      const solutionPath = result.path.split('.');
-      highlighted(`
-        Goal reached '${node.state}' at depth: ${solutionPath.length}, using: ${algoName} in ${iteration} iterations. 
-        Path: ${solutionPath.reverse().join(' -> ')}. 
-        Total cost: ${result.cost}
-        `);
-      return;
-    }
-    const addToFrontier = node.expand(problem);
-    debug(`Is not a goal, then expanding it in: ${addToFrontier.map(n => n.state).join(', ')}`);
-    addToFrontier.forEach((node: Node) => {
-      if ( // Avoid path repetitions
-        !exploredSet.find(s => s === node.state) &&
-        !frontier.find(s => s.state === node.state)
-      ) {
-        frontier.enqueue(node);
-      } else {
-        const toReplace = frontier.find(i =>
-          i.state === node.state && pathCostFunc(i, target) > pathCostFunc(node, target));
-        if (toReplace) {
-          debug(`Replace node ${node.state} in frontier, new path is less expensive, new path cost: ${node.path_cost}, old one: ${toReplace.path_cost}`);
-          frontier.replace(toReplace, node);
-        } else {
-          debug(`Discard node ${node.state} hasn't a lower path cost`);
-        }
-      }
-    });
-  }
-  warning(`\nSolution not found! After ${iteration} iterations.\n`);
-}
-
 //#endregion
 
 //#region Uninformed Search
 
-//#region Find best Path with 'Breadth First Search'
-
 const bfsDemo = () => {
-  let iteration: number = 0;
-  const algoName = 'Breadth First Search';
   const solutionTree = getUndirectedGraphOfCurrentMap();
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
-
-  const exploredSet: string[] = [];
-  const frontier = new FifoQ<Node>([new Node(problem.getInitial, problem.getInitialNode)]);
-
-  while(frontier.length > 0) {
-    iteration++;
-    const node = frontier.dequeue();
-    exploredSet.push(node.state);
-    debug(`Visit node ${node.state}`);
-    if (problem.goal_test(node.state)) {
-      const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
-      const solutionPath = result.path.split('.');
-      highlighted(`
-        Goal reached '${node.state}' at depth: ${solutionPath.length}, using: ${algoName} in ${iteration} iterations. 
-        Path: ${solutionPath.reverse().join(' -> ')}. 
-        Total cost: ${result.cost}
-        `);
-      return;
-    }
-    const addToFrontier = node.expand(problem);
-    debug(`Is not a goal, then expanding it in: ${addToFrontier.map(n => n.state).join(', ')}`);
-    addToFrontier.forEach((node: Node) => {
-      if ( // Avoid path repetitions
-        !exploredSet.find(s => s === node.state) &&
-        !frontier.find(s => s.state === node.state)
-      ) {
-        debug(`Enqueue node ${node.state} in frontier`);
-        frontier.enqueue(node);
-      } else {
-        debug(`Discard node ${node.state}, has already been visited`);
-      }
-    });
-  }
-  warning(`\nSolution not found! After ${iteration} iterations.\n`);
+  search.breadthFirstSearch(problem);
 };
-
-//#endregion
-
-//#region Find best Path with 'Uniform Cost Search'
 
 const ucsDemo = () => {
-  const algoName = 'Uniform Cost Search';
   const solutionTree = getUndirectedGraphOfCurrentMap();
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
-
-  // Create a FIFO queue with priority (by path cost).
-  const frontier = new FifoQ<Node>(
-    [new Node(problem.getInitial, problem.getInitialNode)],
-    (a,b) => {
-      if (a.path_cost > b.path_cost) {
-        return 1;
-      } else if (a.path_cost < b.path_cost) {
-        return -1
-      }
-      return 0;
-    },
-    true);
-
-  bestFirstGraphSearch(
-    // Uniform Cost Search use just the node path cost as is
-    (n: Node, target: string):number => {
-      return n.path_cost;
-    },
-    problem,
-    frontier,
-    algoName);
-};
-
-//#endregion
-
-//#region Find best Path with 'Depth First Search'
-
-const recursiveDls = (
-  depth: number,
-  node: Node,
-  problem: FindingPathProblem,
-  limit: number,
-  exploredSet: string[]
-): Node => {
-  debug(`Entering tree at depth ${depth}`);
-  exploredSet.push(node.state);
-  debug(`Visit node ${node.state}`);
-  if (problem.goal_test(node.state)) {
-    return node;
-  } else {
-    if (limit - depth === 0) {
-      debug('Depth limit reached');
-      return null;
-    }
-    const nodes = node.expand(problem);
-    debug(`Is not a goal, then expanding it in: ${nodes.map(n => n.state).join(', ')}`);
-    let found = null;
-    for (let i = 0; i < nodes.length; i++) {
-      if (exploredSet.find(n => n === nodes[i].state)) {
-        continue;
-      }
-      found = recursiveDls(depth + 1, nodes[i], problem, limit, exploredSet);
-      if (found) {
-        break;
-      }
-    }
-    debug(`Go back to depth level: ${depth - 1}`);
-    return found;
-  }
+  search.uniforCostSearch(problem);
 };
 
 const dfsDemo = () => {
   // Looking for valid config for the current algorithm
   const limitConfig = algConfigs.find(k => k.key === 'limit');
-  const limit = limitConfig ? limitConfig!.value : 10;
-
-  const algoName = 'Depth First Search';
+  const limit = limitConfig ? parseInt(limitConfig!.value) : 10;
   const directedGraph = Utility.makeCopy(map) as GraphNode[];
   const solutionTree = Graph.makeUndirected(directedGraph);
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
-  const exploredSet: string[] = [];
-
-  const node = recursiveDls(
-    1, new Node(problem.getInitial, problem.getInitialNode), problem, parseInt(limit), exploredSet
-  );
-  if (node) {
-    const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
-    const solutionPath = result.path.split('.');
-    highlighted(`
-            Goal reached '${node.state}' at depth ${solutionPath.length}, using: ${algoName} (Depth limit: ${limit}). 
-            Path: ${solutionPath.reverse().join(' -> ')}. 
-            Total cost: ${result.cost}
-          `);
-  } else {
-    warning(`\nSolution not found!.\n`);
-  }
+  search.depthFirstSearch(problem, limit);
 };
-
-//#endregion
-
-//#region Find best Path with 'Iterative Deepening Depth First Search'
 
 const iddfs = () => {
   // Looking for valid config for the current algorithm
   const limitConfig = algConfigs.find(k => k.key === 'limit');
   const maxLimit = limitConfig ? limitConfig!.value : 10;
-  const algoName = 'Iterative Deepening Depth First Search';
   const solutionTree = getUndirectedGraphOfCurrentMap();
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
-
-  for (let i = 1; i <= maxLimit; i++) {
-    debug(`Start iteration with limit ${i}`);
-    const exploredSet: string[] = [];
-    const node = recursiveDls(
-      1, new Node(problem.getInitial, problem.getInitialNode), problem, i, exploredSet
-    );
-    if (node) {
-      const result = Utility.ExplodePathInPlainText(0, 0, node.solution());
-      const solutionPath = result.path.split('.');
-      highlighted(`
-            Goal reached '${node.state}' at depth ${solutionPath.length}, using: ${algoName}. 
-            Path: ${solutionPath.reverse().join(' -> ')}. 
-            Total cost: ${result.cost}
-          `);
-      return;
-    }
-    debug(`Limit increasing`);
-  }
-  warning(`\nSolution not found!.\n`);
+  search.iterativeDeepeningDepthFirstSearch(problem, maxLimit);
 };
-
-//#endregion
 
 //#endregion
 
 //#region Informed Search
 
-//#region Find best Path with 'A* Search'
-
 const as = () => {
-  const algoName = 'A-star Search';
   const solutionTree = getUndirectedGraphOfCurrentMap();
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
   const heuristicData = getMapLocation(program.map);
-
-  const heuristicPathCost = (node: Node, target: string): number => {
-    const nLoc = heuristicData.find(l => l.state === node.state);
-    const gLoc = heuristicData.find(l => l.state === target);
-    return node.path_cost + Utility.distanceOnGraph(
-      {x: nLoc.x, y: nLoc.y},
-      {x: gLoc.x, y: gLoc.y}
-    );
-  };
-  // Create a FIFO queue with priority (by path cost + heuristic knowledge).
-  const frontier = new FifoQ<Node>(
-    [new Node(problem.getInitial, problem.getInitialNode)],
-    // Compare function define how to define the 'priority' queue
-    (a,b) => {
-      const aCost = heuristicPathCost(a,target);
-      const bCost = heuristicPathCost(b, target);
-      if (aCost > bCost) {
-        return 1;
-      } else if (aCost < bCost) {
-        return -1;
-      }
-      return 0;
-    },
-    // Apply priority automatically
-    true);
-
-  bestFirstGraphSearch(
-    // A* Search use the node path cost and some heuristic knowledge
-    (n: Node, target: string):number => {
-      return heuristicPathCost(n, target);
-    },
-    problem,
-    frontier,
-    algoName);
+  search.astarSearch(problem, heuristicData);
 };
-
-//#endregion
-
-//#region Find best path with 'Recursive Best First Search'
-
-interface RbfsResult {
-  /**
-   * Node
-   */
-  node: Node,
-  /**
-   * A total cost (path cost + heuristic cost) of the discovered path
-   */
-  fCost: number
-}
 
 const rbfs = () => {
-  let iterations = 0;
-  const algoName = 'Recursive Best First Search';
   const solutionTree = getUndirectedGraphOfCurrentMap();
   const problem = new FindingPathProblem(start, target, solutionTree.nodes);
   const heuristicData = getMapLocation(program.map);
-
-  const heuristicPathCost = (node: Node, target: string): number => {
-    const nLoc = heuristicData.find(l => l.state === node.state);
-    const gLoc = heuristicData.find(l => l.state === target);
-    return node.path_cost + Utility.distanceOnGraph(
-      {x: nLoc.x, y: nLoc.y},
-      {x: gLoc.x, y: gLoc.y}
-    );
-  };
-
-  const compareFn = (a: Node, b: Node) => {
-    if (a.f > b.f) {
-      return 1;
-    } else if (a.f < b.f) {
-      return -1;
-    }
-    return 0;
-  };
-
-  const recursiveRbfs = (problem: FindingPathProblem, node: Node, f_limit: number): RbfsResult => {
-    iterations++;
-
-    debug(`Visit node ${node.state}`);
-    if (problem.goal_test(node.state)) {
-      return { node: node, fCost: node.f };
-    }
-
-    const successors = node.expand(problem);
-    if (successors.length === 0) {
-      return { node: null, fCost: Infinity };
-    }
-    debug(`Is not a goal, then expanding it in: 
-  ${successors.map(n => n.state).join(', ')}`);
-    successors.forEach((child: Node) => {
-      const childF = heuristicPathCost(child, target);
-      child.f = Math.max(childF, node.f);
-    });
-
-    while (true) {
-      successors.sort(compareFn);
-      debug(`Evaluate next nodes by path cost + heuristic function, 
-  now are: |${successors.map(s => `${s.state}(${s.f.toFixed(2)})`).join('|')}|`);
-      let alternativeCost: number;
-      const best = successors[0];
-      if (best) {
-        debug(`Selected best node: ${best.state} with estimated cost to goal: ${best.f.toFixed(2)}`);
-      } else {
-        debug('Frontier is empty');
-        return { node: null, fCost: Infinity };
-      }
-      if (best.f > f_limit) {
-        debug(`Discard this best path via ${best.state} due to worst cost: 
-  (new -> ${best.f.toFixed(2)}) > (prev -> ${f_limit.toFixed(2)})`);
-        return { node: null, fCost: best.f };
-      }
-      if (successors.length > 1) {
-        alternativeCost = successors[1].f;
-        debug(`Selected an alternative path via ${successors[1].state} 
-  with estimated cost to goal: ${alternativeCost.toFixed(2)}`);
-      } else {
-        debug('Last node of the frontier reached');
-        alternativeCost = Infinity;
-      }
-      const res = recursiveRbfs(problem, best, Math.min(f_limit, alternativeCost));
-      best.f = res.fCost;
-      if (res.node) {
-        return { node: res.node, fCost: best.f };
-      } else {
-        debug(`Go back and select the alternative path from the frontier`);
-      }
-    }
-  };
-
-  const startNode = new Node(problem.getInitial, problem.getInitialNode);
-  startNode.f = heuristicPathCost(startNode, target);
-  const res = recursiveRbfs(problem, startNode, Infinity);
-
-  if (res.node) {
-    const result = Utility.ExplodePathInPlainText(0, 0, res.node.solution());
-    const solutionPath = result.path.split('.');
-    highlighted(`
-        Goal reached '${res.node.state}' at depth: ${solutionPath.length}, using: ${algoName}, total recursive iterations: ${iterations}. 
-        Path: ${solutionPath.reverse().join(' -> ')}. 
-        Total cost: ${result.cost}
-        `);
-    return;
-  } else {
-    warning(`\nSolution not found!\n`);
-  }
+  search.recursiveBestFirstSearch(problem, heuristicData);
 };
-
-//#endregion
 
 //#endregion
 
