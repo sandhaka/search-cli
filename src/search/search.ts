@@ -9,12 +9,20 @@ import { Utility } from '../utils/utility';
 export class Search {
 
   /**
-   * Search configs
+   * Logging actions
    */
   private readonly debug: (text: string) => void;
   private readonly warning: (text: string) => void;
   private readonly highlighted: (text: string) => void;
+
+  /**
+   * Commander instance
+   */
   private readonly program: any;
+
+  /**
+   * Goal config
+   */
   private readonly start: string;
   private readonly target: string;
 
@@ -116,6 +124,11 @@ export class Search {
     }
   }
 
+  /**
+   * Breadth First Search
+   * expands the shallowest nodes first; it is complete, optimal
+   * for unit step costs, but has exponential space complexity.
+   */
   breadthFirstSearch(problem: FindingPathProblem): void {
     let iteration: number = 0;
     const algoName = 'Breadth First Search';
@@ -155,6 +168,11 @@ export class Search {
     this.warning(`\nSolution not found! After ${iteration} iterations.\n`);
   }
 
+  /**
+   * Uniform-cost search
+   * expands the node with lowest path cost, g(n), and is optimal
+   * for general step costs.
+   */
   uniforCostSearch(problem: FindingPathProblem): void {
 
     const algoName = 'Uniform Cost Search';
@@ -182,6 +200,12 @@ export class Search {
       algoName);
   }
 
+  /**
+   * Depth-first search
+   * expands the deepest unexpanded node first. It is neither complete
+   * nor optimal, but has linear space complexity. Depth-limited search adds a
+   * depth bound.
+   */
   depthFirstSearch(problem: FindingPathProblem, limit: number): void {
     const algoName = 'Depth First Search';
     const exploredSet: string[] = [];
@@ -202,6 +226,12 @@ export class Search {
     }
   }
 
+  /**
+   * Iterative deepening search
+   * calls depth-first search with increasing depth limits * until a goal is found.
+   * It is complete, optimal for unit step costs, has time complexity
+   * comparable to breadth-first search, and has linear space complexity.
+   */
   iterativeDeepeningDepthFirstSearch(problem: FindingPathProblem, maxLimit: number): void {
     const algoName = 'Iterative Deepening Depth First Search';
     for (let i = 1; i <= maxLimit; i++) {
@@ -225,6 +255,12 @@ export class Search {
     this.warning(`\nSolution not found!.\n`);
   }
 
+  /**
+   * A∗ search
+   * expands nodes with minimal f(n) = g(n) + h(n). A∗ is complete and
+   * optimal, provided that h(n) is admissible (for TREE-SEARCH) or consistent
+   * (for GRAPH-SEARCH). The space complexity of A∗ is still prohibitive.
+   */
   astarSearch(problem: FindingPathProblem, heuristicData: any[]): void {
     const algoName = 'A-star Search';
     const heuristicPathCost = (node: Node, target: string): number => {
@@ -262,6 +298,11 @@ export class Search {
       algoName);
   }
 
+  /**
+   * RBFS (recursive best-first search) and SMA∗ (simplified memory-bounded A∗)
+   * are robust, optimal search algorithms that use limited amounts of memory; give
+   * enough time, they can solve problems that A∗ cannot solve because it runs out of memory.
+   */
   recursiveBestFirstSearch(problem: FindingPathProblem, heuristicData: any[]): void {
     let iterations = 0;
     const algoName = 'Recursive Best First Search';
