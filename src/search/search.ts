@@ -1,5 +1,6 @@
 import { Node } from '../node/node';
 import { FindingPathProblem } from '../problem/finding-path-problem';
+import { Problem } from '../problem/problem';
 import { FifoQ } from '../utils/fifo-queue';
 import { Utility } from '../utils/utility';
 
@@ -129,7 +130,7 @@ export class Search {
    * expands the shallowest nodes first; it is complete, optimal
    * for unit step costs, but has exponential space complexity.
    */
-  breadthFirstSearch(problem: FindingPathProblem): void {
+  breadthFirstSearch(problem: Problem): void {
     let iteration: number = 0;
     const algoName = 'Breadth First Search';
 

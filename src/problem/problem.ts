@@ -1,3 +1,5 @@
+import { GraphNode } from '../graph/graph';
+
 /**
  * Problem abstraction
  */
@@ -18,4 +20,8 @@ export abstract class Problem {
   public abstract goal_test(state: any): boolean;
 
   public abstract pathCost(c: number, state1: any, action: any, state2: any): number;
+
+  public abstract get getInitialNode(): any;
+
+  public abstract get getInitial(): any;
 }

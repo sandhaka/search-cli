@@ -13,13 +13,27 @@ export class NQueensProblem extends Problem {
    * the c-th entry means there is a queen at column c, and row r, and a value
    * of -1 means that the c-th column has not been filled yet.
    */
-  private readonly _boardModel: number[];
+  get getInitial(): number[] {
+    return this.initial;
+  }
 
-  constructor(initial: number[]) {
+
+  get getInitialNode(): any {
+    return null;
+  }
+
+  constructor(n: number) {
+
+    if (n < 2) {
+      throw 'Minimum board size: 2x2';
+    }
+
     super(
-      initial,   // Initial board config
-      null  // The goal si dynamically obtained
+      [...Array(n).map(x => -1)],   // Initial board config
+      null                          // The goal si dynamically obtained
     );
+
+    this._n = n;
   }
 
   actions(state: number[]): number[] {
@@ -32,21 +46,21 @@ export class NQueensProblem extends Problem {
     const acts = [];
     // Return possible positions
     for (let r = 0; r < this._n; r++) {
-      if (!this.getConflict(r, col)) {
+      if (!this.getConflict(state, r, col)) {
         acts.push(r);
       }
     }
     return acts;
   }
 
-  goal_test(state: any): boolean {
+  goal_test(state: number[]): boolean {
     // Board is not complete
     if (state.indexOf(-1)) {
       return false;
     }
     let goalReached = true;
     state.forEach((r: number, col: number) => {
-      if (this.getConflict(r, col)) {
+      if (this.getConflict(state, r, col)) {
         goalReached = false;
         return;
       }
@@ -67,9 +81,9 @@ export class NQueensProblem extends Problem {
     return newState;
   }
 
-  private getConflict(row: number, col: number): boolean {
+  private getConflict(state: number[], row: number, col: number): boolean {
     for (let c = 0; c < col; c++) {
-      if (this.conflict(row, col, this._boardModel[c], c)) {
+      if (this.conflict(row, col, state[c], c)) {
         return true;
       }
     }

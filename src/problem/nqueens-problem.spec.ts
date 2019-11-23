@@ -2,6 +2,9 @@ import test from 'ava';
 import { NQueensProblem } from './nqueens-problem';
 
 test('Create NQueens Problem', t => {
-  const problem = new NQueensProblem([1,3,4,5,2,7,6,5]);
+  const problem = new NQueensProblem(4);
+
+  t.assert(problem.getInitial);
+  t.assert(problem.getInitial.length === 4);
   t.assert(problem);
 });
