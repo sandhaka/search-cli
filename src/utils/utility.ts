@@ -1,13 +1,13 @@
-import { GraphNode, GraphPoint } from '../graph/graph';
+import { GraphPoint } from '../graph/graph';
 
 export class Utility {
 
-  //#region Objects
+  //#region Common
 
   static ExplodePathInPlainText(
     index: number,
     cost: number,
-    nodes: GraphNode[]): {path: string, cost: number} {
+    nodes: any[]): {path: string, cost: number} {
     if (index >= nodes.length) {
       return {
         cost: 0,

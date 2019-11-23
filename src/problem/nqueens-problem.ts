@@ -19,7 +19,7 @@ export class NQueensProblem extends Problem {
 
 
   get getInitialNode(): any {
-    return null;
+    return 0;
   }
 
   constructor(n: number) {
@@ -28,9 +28,12 @@ export class NQueensProblem extends Problem {
       throw 'Minimum board size: 2x2';
     }
 
+    const initialState: number[] = new Array(n);
+    initialState.fill(-1);
+
     super(
-      [...Array(n).map(x => -1)],   // Initial board config
-      null                          // The goal si dynamically obtained
+      initialState,   // Initial board config
+      null       // The goal si dynamically obtained
     );
 
     this._n = n;
@@ -55,7 +58,7 @@ export class NQueensProblem extends Problem {
 
   goal_test(state: number[]): boolean {
     // Board is not complete
-    if (state.indexOf(-1)) {
+    if (state.indexOf(-1) >= 0) {
       return false;
     }
     let goalReached = true;
@@ -78,7 +81,7 @@ export class NQueensProblem extends Problem {
     const col = state.indexOf(-1);
     const newState = Utility.makeCopy(state);
     newState[col] = row;
-    return newState;
+    return { State: newState };
   }
 
   private getConflict(state: number[], row: number, col: number): boolean {

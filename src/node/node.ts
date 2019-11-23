@@ -1,4 +1,5 @@
 import { Problem } from '../problem/problem';
+import { Utility } from '../utils/utility';
 
 /**
  * Tree structure implementation
@@ -51,7 +52,18 @@ export class Node {
    * Return solution as sequence of actions to solve the problem
    */
   solution(): any[] {
-    return this.path().map(n => n.action);
+    const path = this.path();
+    if (Utility.isObject(path[0].action)) {
+      return path.map(n => n.action);
+    } else {
+      // General struct
+      const res = [];
+      path.forEach(n => res.push({
+        Cost: n.path_cost,
+        State: n.state
+      }));
+      return res;
+    }
   }
 
   private child_node(problem: Problem, action: any): Node {

@@ -8,7 +8,7 @@ import { Search } from './search/search';
 
 test('Try To solve the NQueens problem', t => {
   // Setup
-  const problem = new NQueensProblem(4);
+  const problem = new NQueensProblem(5);
   const s = new Search(
     console.log,
     console.log,
