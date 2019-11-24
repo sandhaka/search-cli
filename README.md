@@ -47,4 +47,4 @@ Commands:
 ```
 
 #### In progress stuff / TODO:
-- 
+- New demos about advanced search strategies

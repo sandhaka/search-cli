@@ -1,6 +1,8 @@
 import { performance } from 'perf_hooks';
 import { Graph, GraphNode } from './graph/graph';
 import { FindingPathProblem } from './problem/finding-path-problem';
+import { NQueensProblem } from './problem/nqueens-problem';
+import { Problem } from './problem/problem';
 import {
   NorthItalyDirectedGraph, RomaniaLocations,
   RomaniaRoadMap
@@ -12,10 +14,11 @@ import program from 'commander';
 //#region Cli Setup
 
 const demos = ['bfs', 'ucs', 'dfs', 'iddfs', 'as', 'rbfs'];
-const maps = ['romania', 'north-italy'];
+const maps = ['romania', 'north-italy', 'nqueens'];
 
 let demo: string = '-';
 let map: GraphNode[];
+let problem: Problem;
 let start: string;
 let target: string;
 const algConfigs: {key: any, value: any}[] = [];
@@ -56,7 +59,7 @@ if (program.list) {
   demos.forEach(d => {
     console.log(d);
   });
-  console.log('Available maps (problems): ');
+  console.log('Available problems: ');
   maps.forEach(d => {
     console.log(d);
   });
@@ -64,27 +67,49 @@ if (program.list) {
 }
 
 switch (program.map) {
-  case 'romania': {
-    map = RomaniaRoadMap;
-    start = 'Arad';
-    target = 'Bucharest';
-    break;
-  }
-  default: {
+  case 'north-italy': {
     program.map = 'north-italy';
     map = NorthItalyDirectedGraph;
     start = 'Milano';
     target = 'Venezia';
+    goalConfigHandler(algConfigs);
+
+    problem = new FindingPathProblem(start, target, getUndirectedGraphOfCurrentMap().nodes);
 
     // Sanity checks
     if (demo === 'as' || demo === 'rbfs') {
       warning('A*|rbfs searches cannot be used with north-italy since locations for this maps has not been implemented.');
       process.exit(-1);
     }
+
+    break;
+  }
+  case 'nqueens': {
+    // Looking for valid config for the current algorithm
+    const sizeConfig = algConfigs.find(k => k.key === 'size');
+    const size = sizeConfig ? parseInt(sizeConfig!.value) : 8;
+
+    // Sanity checks
+    if (demo === 'ucs' || demo === 'as' || demo === 'rbfs') {
+      warning('A*|rbfs|ucs searches cannot be used with NQueens problem.');
+      process.exit(-1);
+    }
+
+    problem = new NQueensProblem(size);
+
+    break;
+  }
+  default: {
+    map = RomaniaRoadMap;
+    start = 'Arad';
+    target = 'Bucharest';
+    goalConfigHandler(algConfigs);
+
+    problem = new FindingPathProblem(start, target, getUndirectedGraphOfCurrentMap().nodes);
+
+    break;
   }
 }
-
-goalConfigHandler(algConfigs);
 
 const search: Search = new Search(
   debug, warning, highlighted, program, start, target
@@ -140,14 +165,10 @@ function getMapLocation(mapName: string): any[] {
 //#region Uninformed Search
 
 const bfsDemo = () => {
-  const solutionTree = getUndirectedGraphOfCurrentMap();
-  const problem = new FindingPathProblem(start, target, solutionTree.nodes);
   search.breadthFirstSearch(problem);
 };
 
 const ucsDemo = () => {
-  const solutionTree = getUndirectedGraphOfCurrentMap();
-  const problem = new FindingPathProblem(start, target, solutionTree.nodes);
   search.uniforCostSearch(problem);
 };
 
@@ -155,9 +176,6 @@ const dfsDemo = () => {
   // Looking for valid config for the current algorithm
   const limitConfig = algConfigs.find(k => k.key === 'limit');
   const limit = limitConfig ? parseInt(limitConfig!.value) : 10;
-  const directedGraph = Utility.makeCopy(map) as GraphNode[];
-  const solutionTree = Graph.makeUndirected(directedGraph);
-  const problem = new FindingPathProblem(start, target, solutionTree.nodes);
   search.depthFirstSearch(problem, limit);
 };
 
@@ -165,8 +183,6 @@ const iddfs = () => {
   // Looking for valid config for the current algorithm
   const limitConfig = algConfigs.find(k => k.key === 'limit');
   const maxLimit = limitConfig ? limitConfig!.value : 10;
-  const solutionTree = getUndirectedGraphOfCurrentMap();
-  const problem = new FindingPathProblem(start, target, solutionTree.nodes);
   search.iterativeDeepeningDepthFirstSearch(problem, maxLimit);
 };
 
@@ -175,18 +191,20 @@ const iddfs = () => {
 //#region Informed Search
 
 const as = () => {
-  const solutionTree = getUndirectedGraphOfCurrentMap();
-  const problem = new FindingPathProblem(start, target, solutionTree.nodes);
   const heuristicData = getMapLocation(program.map);
   search.astarSearch(problem, heuristicData);
 };
 
 const rbfs = () => {
-  const solutionTree = getUndirectedGraphOfCurrentMap();
-  const problem = new FindingPathProblem(start, target, solutionTree.nodes);
   const heuristicData = getMapLocation(program.map);
   search.recursiveBestFirstSearch(problem, heuristicData);
 };
+
+//#endregion
+
+//#region Advanced search
+
+
 
 //#endregion
 

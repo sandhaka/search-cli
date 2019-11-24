@@ -6,7 +6,7 @@ import { Search } from './search/search';
  * A collection of manual test using ava
  */
 
-test('Try To solve the NQueens problem', t => {
+test('Try To solve the NQueens problem with Breadth First Search', t => {
   // Setup
   const problem = new NQueensProblem(5);
   const s = new Search(

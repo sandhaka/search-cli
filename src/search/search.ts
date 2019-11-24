@@ -1,31 +1,13 @@
 import { Node } from '../node/node';
-import { FindingPathProblem } from '../problem/finding-path-problem';
 import { Problem } from '../problem/problem';
 import { FifoQ } from '../utils/fifo-queue';
 import { Utility } from '../utils/utility';
+import { SearchBase } from './search-base';
 
 /**
  * The collection of standard graph/tree search algorithms
  */
-export class Search {
-
-  /**
-   * Logging actions
-   */
-  private readonly debug: (text: string) => void;
-  private readonly warning: (text: string) => void;
-  private readonly highlighted: (text: string) => void;
-
-  /**
-   * Commander instance
-   */
-  private readonly program: any;
-
-  /**
-   * Goal config
-   */
-  private readonly start: string;
-  private readonly target: string;
+export class Search extends SearchBase{
 
   constructor(
     debug: (text: string) => void,
@@ -35,17 +17,12 @@ export class Search {
     start: string,
     target: string
   ) {
-    this.debug = debug;
-    this.warning = warning;
-    this.highlighted = highlighted;
-    this.program = program;
-    this.start = start;
-    this.target = target;
+    super(debug, warning, highlighted, program, start, target);
   }
 
   private bestFirstGraphSearch(
     pathCostFunc: (node: Node, target: string) => number,
-    problem: FindingPathProblem,
+    problem: Problem,
     queue: FifoQ<Node>,
     algoName: string) {
 
@@ -94,7 +71,7 @@ export class Search {
   private recursiveDls(
     depth: number,
     node: Node,
-    problem: FindingPathProblem,
+    problem: Problem,
     limit: number,
     exploredSet: string[]
   ): Node {
@@ -174,7 +151,7 @@ export class Search {
    * expands the node with lowest path cost, g(n), and is optimal
    * for general step costs.
    */
-  uniforCostSearch(problem: FindingPathProblem): void {
+  uniforCostSearch(problem: Problem): void {
 
     const algoName = 'Uniform Cost Search';
 
@@ -207,7 +184,7 @@ export class Search {
    * nor optimal, but has linear space complexity. Depth-limited search adds a
    * depth bound.
    */
-  depthFirstSearch(problem: FindingPathProblem, limit: number): void {
+  depthFirstSearch(problem: Problem, limit: number): void {
     const algoName = 'Depth First Search';
     const exploredSet: string[] = [];
 
@@ -233,7 +210,7 @@ export class Search {
    * It is complete, optimal for unit step costs, has time complexity
    * comparable to breadth-first search, and has linear space complexity.
    */
-  iterativeDeepeningDepthFirstSearch(problem: FindingPathProblem, maxLimit: number): void {
+  iterativeDeepeningDepthFirstSearch(problem: Problem, maxLimit: number): void {
     const algoName = 'Iterative Deepening Depth First Search';
     for (let i = 1; i <= maxLimit; i++) {
       this.debug(`Start iteration with limit ${i}`);
@@ -262,7 +239,7 @@ export class Search {
    * optimal, provided that h(n) is admissible (for TREE-SEARCH) or consistent
    * (for GRAPH-SEARCH). The space complexity of A∗ is still prohibitive.
    */
-  astarSearch(problem: FindingPathProblem, heuristicData: any[]): void {
+  astarSearch(problem: Problem, heuristicData: any[]): void {
     const algoName = 'A-star Search';
     const heuristicPathCost = (node: Node, target: string): number => {
       const nLoc = heuristicData.find(l => l.state === node.state);
@@ -304,7 +281,7 @@ export class Search {
    * are robust, optimal search algorithms that use limited amounts of memory; give
    * enough time, they can solve problems that A∗ cannot solve because it runs out of memory.
    */
-  recursiveBestFirstSearch(problem: FindingPathProblem, heuristicData: any[]): void {
+  recursiveBestFirstSearch(problem: Problem, heuristicData: any[]): void {
     let iterations = 0;
     const algoName = 'Recursive Best First Search';
 
@@ -326,7 +303,7 @@ export class Search {
       return 0;
     };
 
-    const recursiveRbfs = (problem: FindingPathProblem, node: Node, f_limit: number): RbfsResult => {
+    const recursiveRbfs = (problem: Problem, node: Node, f_limit: number): RbfsResult => {
       iterations++;
 
       this.debug(`Visit node ${node.state}`);

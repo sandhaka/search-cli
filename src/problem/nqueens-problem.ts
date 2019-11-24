@@ -4,15 +4,11 @@ import { Problem } from './problem';
 export class NQueensProblem extends Problem {
 
   /**
-   * Board size -> NxN
-   */
-  private readonly _n: number;
-  /**
-   * Board model
    * A state is represented as an n-element array, where the a value of r in
    * the c-th entry means there is a queen at column c, and row r, and a value
    * of -1 means that the c-th column has not been filled yet.
    */
+
   get getInitial(): number[] {
     return this.initial;
   }
@@ -35,8 +31,6 @@ export class NQueensProblem extends Problem {
       initialState,   // Initial board config
       null       // The goal si dynamically obtained
     );
-
-    this._n = n;
   }
 
   actions(state: number[]): number[] {
@@ -48,8 +42,8 @@ export class NQueensProblem extends Problem {
     const col = state.indexOf(-1);
     const acts = [];
     // Return possible positions
-    for (let r = 0; r < this._n; r++) {
-      if (!this.getConflict(state, r, col)) {
+    for (let r = 0; r < state.length; r++) {
+      if (!NQueensProblem.getConflict(state, r, col)) {
         acts.push(r);
       }
     }
@@ -63,7 +57,7 @@ export class NQueensProblem extends Problem {
     }
     let goalReached = true;
     state.forEach((r: number, col: number) => {
-      if (this.getConflict(state, r, col)) {
+      if (NQueensProblem.getConflict(state, r, col)) {
         goalReached = false;
         return;
       }
@@ -84,16 +78,16 @@ export class NQueensProblem extends Problem {
     return { State: newState };
   }
 
-  private getConflict(state: number[], row: number, col: number): boolean {
+  private static getConflict(state: number[], row: number, col: number): boolean {
     for (let c = 0; c < col; c++) {
-      if (this.conflict(row, col, state[c], c)) {
+      if (NQueensProblem.conflict(row, col, state[c], c)) {
         return true;
       }
     }
     return false;
   }
 
-  private conflict(row1: number, col1: number, row2: number, col2: number): boolean {
+  private static conflict(row1: number, col1: number, row2: number, col2: number): boolean {
     return row1 === row2 ||
       col1 === col2 ||
       row1 - col1 === row2 - col2 ||
