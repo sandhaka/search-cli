@@ -1,3 +1,4 @@
+import { Problem } from '../problem/problem';
 import { SearchBase } from './search-base';
 
 export class AdvancedSearch extends SearchBase {
@@ -13,4 +14,7 @@ export class AdvancedSearch extends SearchBase {
     super(debug, warning, highlighted, program, start, target);
   }
 
+  simulatedAnnealing(problem: Problem): void {
+
+  }
 }
