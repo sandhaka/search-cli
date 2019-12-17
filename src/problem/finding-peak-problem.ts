@@ -69,24 +69,22 @@ export class FindingPeakProblem extends Problem {
     }
   ];
   private readonly area: number[][];
-  private current: {x: number, y: number};
   private readonly gMaxX: number;
   private readonly gMaxY: number;
 
   constructor(area: number[][], initialPosition: {x:number, y:number} = {x: 0, y: 0}) {
     super(initialPosition, null);
     this.area = area;
-    this.current = initialPosition;
     this.gMaxX = this.area.length - 1;
     this.gMaxY = this.area[0].length -1;
   }
 
-  actions(state: any): Direction[] {
+  actions(state: {x:number, y:number}): Direction[] {
     const allowed_actions = [];
     this.directions.forEach((d: Direction) => {
       const nextPos = {
-        x: this.current.x + d.value.x,
-        y: this.current.y + d.value.y
+        x: state.x + d.value.x,
+        y: state.y + d.value.y
       };
       if (nextPos.x >= 0 &&
         nextPos.y >= 0 &&
@@ -121,5 +119,9 @@ export class FindingPeakProblem extends Problem {
       x: state.x + action.value.x,
       y: state.y + action.value.y
     };
+  }
+
+  value(state: {x:number, y:number}): number {
+    return this.area[state.x][state.y];
   }
 }

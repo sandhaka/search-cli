@@ -1,19 +1,21 @@
 import { performance } from 'perf_hooks';
 import { Graph, GraphNode } from './graph/graph';
 import { FindingPathProblem } from './problem/finding-path-problem';
+import { FindingPeakProblem } from './problem/finding-peak-problem';
 import { NQueensProblem } from './problem/nqueens-problem';
 import { Problem } from './problem/problem';
 import {
   NorthItalyDirectedGraph, RomaniaLocations,
   RomaniaRoadMap
 } from './resources/input-data';
+import { AdvancedSearch } from './search/advanced-search';
 import { Search } from './search/search';
 import { Utility } from './utils/utility';
 import program from 'commander';
 
 //#region Cli Setup
 
-const demos = ['bfs', 'ucs', 'dfs', 'iddfs', 'as', 'rbfs'];
+const demos = ['bfs', 'ucs', 'dfs', 'iddfs', 'as', 'rbfs', 'sima'];
 const maps = ['romania', 'north-italy', 'nqueens'];
 
 let demo: string = '-';
@@ -115,6 +117,10 @@ const search: Search = new Search(
   debug, warning, highlighted, program, start, target
 );
 
+const advSearch: AdvancedSearch = new AdvancedSearch(
+  debug, warning, highlighted, program, start, target
+);
+
 //#endregion
 
 //#region Console
@@ -204,7 +210,11 @@ const rbfs = () => {
 
 //#region Advanced search
 
-
+const sima = () => {
+  const area: number[][] = []; // TODO init
+  const initialPosition: {x:number, y:number} = {x: 1, y: 1}; // TODO Random
+  advSearch.simulatedAnnealing(new FindingPeakProblem(area, initialPosition));
+};
 
 //#endregion
 
@@ -238,13 +248,23 @@ switch (demo) {
     f = rbfs;
     break;
   }
+  case 'sima': {
+    program.map = null;
+    f = sima;
+    break;
+  }
   case '-': {
     console.error('No demo chosen, see --help output for details');
     process.exit(-1);
   }
 }
 
-console.log(`Play '${demo}' demo, using map: '${program.map}'`);
+console.log(`Play '${demo}' demo`);
+
+if (program.map) {
+  console.log(`Using map: '${program.map}'`);
+}
+
 if (algConfigs.length > 0) {
   console.log(`With config: ${JSON.stringify(algConfigs, null, 2)}`);
 }

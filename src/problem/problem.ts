@@ -24,4 +24,7 @@ export abstract class Problem {
   public abstract get getInitialNode(): any;
 
   public abstract get getInitial(): any;
+
+  // Used in optimization problems
+  public value(state: any): any { }
 }
