@@ -211,9 +211,33 @@ const rbfs = () => {
 //#region Advanced search
 
 const sima = () => {
-  const area: number[][] = []; // TODO init
-  const initialPosition: {x:number, y:number} = {x: 1, y: 1}; // TODO Random
-  advSearch.simulatedAnnealing(new FindingPeakProblem(area, initialPosition));
+
+  const area: number[][] = [];
+  let targetKeeping: number = 0;
+
+  for (let r = 0; r < 16; r++) {
+    area.push([]);
+    for (let c = 0; c < 16; c++) {
+      area[r][c] = Utility.genStochastic(0, 100);
+      if (area[r][c] > targetKeeping) {
+        targetKeeping = area[r][c];
+      }
+    }
+  }
+
+  const row = Utility.randomOf(area);
+  const column = Utility.randomOf(row);
+
+  const initialPosition: {x:number, y:number} = {
+    x: area.indexOf(row),
+    y: row.indexOf(column)
+  };
+
+  advSearch.simulatedAnnealing(new FindingPeakProblem(area, initialPosition), targetKeeping);
+};
+
+const simare = () => {
+  // TODO: SIMA with a real 2D surface no random
 };
 
 //#endregion

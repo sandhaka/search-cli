@@ -47,6 +47,18 @@ export class Utility {
     return obj != null && obj.constructor.name === 'Object';
   }
 
+  static genStochastic(min: number, max: number) {
+    return Math.random() * (max - min) + min;
+  }
+
+  static randomOf<T>(seq: T[]): T {
+    if (!seq || seq.length === 0) {
+      return null;
+    }
+    const randomIndex = Math.floor(Math.random() * seq.length);
+    return seq[randomIndex];
+  }
+
   //#endregion
 
   //#region Math
@@ -62,7 +74,7 @@ export class Utility {
 
   static get header(): string {
     return `
-  
+
                           _
                        _ooOoo_
                       o8888888o
@@ -82,9 +94,9 @@ export class Utility {
          \\  \\ '-.   \\_\\_'. _.'_/_/  -' _.' /
 ==========='-.'___'-.__\\ \\___  /__.-'_.'_.-'================
                        '=--=-'                    hjw
-______________________________________________________________ 
+______________________________________________________________
                       Waheguru Ji
-______________________________________________________________                         
+______________________________________________________________
 `;
   }
 
