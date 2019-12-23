@@ -67,6 +67,10 @@ export class Utility {
     /* Apply hypotenuse calculation to graph points */
     return Math.hypot((a.x - b.x), (a.y - b.y));
   }
+  
+  static eggholderFn(x: number, y: number): number {
+   return - (y + 47) * Math.sin(Math.sqrt(Math.abs(x / 2 + (y + 47)))) - x * Math.sin(Math.sqrt(Math.abs(x - (y + 47))));
+  }
 
   //#endregion
 
