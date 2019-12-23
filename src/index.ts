@@ -237,6 +237,19 @@ const sima = () => {
 };
 
 const simare = () => {
+  //const size = 64;
+  //let targetKeeping: number = 0;
+  //const area: number[][] = [];
+  //for (let r = 0; r < size; r++) {
+  //  area.push([]);
+  //  for (let c = 0; c < size; c++) {
+  //    area[r][c] = Utility.eggholder(size - r, size - c);
+  //    if (area[r][c] > targetKeeping) {
+  //      targetKeeping = area[r][c];
+  //    }
+  //  }
+  //}
+  
   // TODO: SIMA with a real 2D surface no random
 };
 
