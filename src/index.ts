@@ -15,7 +15,7 @@ import program from 'commander';
 
 //#region Cli Setup
 
-const demos = ['bfs', 'ucs', 'dfs', 'iddfs', 'as', 'rbfs', 'sima'];
+const demos = ['bfs', 'ucs', 'dfs', 'iddfs', 'as', 'rbfs', 'sima', 'simare'];
 const maps = ['romania', 'north-italy', 'nqueens'];
 
 let demo: string = '-';
@@ -237,20 +237,28 @@ const sima = () => {
 };
 
 const simare = () => {
-  //const size = 64;
-  //let targetKeeping: number = 0;
-  //const area: number[][] = [];
-  //for (let r = 0; r < size; r++) {
-  //  area.push([]);
-  //  for (let c = 0; c < size; c++) {
-  //    area[r][c] = Utility.eggholder(size - r, size - c);
-  //    if (area[r][c] > targetKeeping) {
-  //      targetKeeping = area[r][c];
-  //    }
-  //  }
-  //}
-  
-  // TODO: SIMA with a real 2D surface no random
+  const size = 64;
+  let targetKeeping: number = 0;
+  const area: number[][] = [];
+  for (let r = 0; r < size; r++) {
+   area.push([]);
+   for (let c = 0; c < size; c++) {
+     area[r][c] = Utility.eggholderFn(size - r, size - c);
+     if (area[r][c] > targetKeeping) {
+       targetKeeping = area[r][c];
+     }
+   }
+  }
+
+  const row = Utility.randomOf(area);
+  const column = Utility.randomOf(row);
+
+  const initialPosition: {x:number, y:number} = {
+    x: area.indexOf(row),
+    y: row.indexOf(column)
+  };
+
+  advSearch.simulatedAnnealing(new FindingPeakProblem(area, initialPosition), targetKeeping);
 };
 
 //#endregion
@@ -288,6 +296,11 @@ switch (demo) {
   case 'sima': {
     program.map = null;
     f = sima;
+    break;
+  }
+  case 'simare': {
+    program.map = null;
+    f = simare;
     break;
   }
   case '-': {
