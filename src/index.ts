@@ -16,6 +16,7 @@ import program from 'commander';
 //#region Cli Setup
 
 const demos = ['bfs', 'ucs', 'dfs', 'iddfs', 'as', 'rbfs', 'sima', 'simare'];
+const games = [];
 const maps = ['romania', 'north-italy', 'nqueens'];
 
 let demo: string = '-';
@@ -29,6 +30,7 @@ program
   .name('node index.js')
   .description('AI.Js learning project - Collection about AI demos' + Utility.header)
   .command('demo <name>', 'Demo to run')
+  .command('game <name>', 'Game to run')
   .option('-c, --configs <params>',
     'Configurations (syntax: \'par1=value1,par2=value2...\')',
     (configs: string) => {
