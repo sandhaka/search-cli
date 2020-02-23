@@ -1,7 +1,4 @@
-# AI lrn.cli "ZERO-LIBRARY"
-> Learning stuff inspired by "Peter Norvig & Stuart Russell approach".
-> Why Zero-Library? Because the hard-way is always the best way to understand things.
-
+# Search Cli - Search demos in Typescript
 
 ```bash
 $ node index.js --help
@@ -46,5 +43,3 @@ Commands:
   help [cmd]              display help for [cmd]
 ```
 
-#### In progress stuff / TODO:
-- New demos about advanced search strategies
